@@ -141,7 +141,7 @@ public:
 		WheelList<T>* pWheel = FindWheel(obj->time_stamp);
 		pWheel->Push(obj);
 
-		m_node_map[obj->owner_id][obj->id] = obj;
+		m_node_map[obj->id] = obj;
 	}
 
 	void PushAll(T* obj, int32_t wheel_index)
@@ -196,38 +196,25 @@ public:
 		tmpHead = head;
 		while(tmpHead)
 		{
-			Erase(tmpHead->owner_id, tmpHead->id);
+			m_node_map.erase(tmpHead->id);
 			tmpHead = tmpHead->next;
 		}
 		return head;
 	}
 
-	T* PopAndErase(int64_t owner_id, int32_t id)
+	T* PopAndErase(int32_t id)
 	{
-		if (m_node_map.find(owner_id) == m_node_map.end())
+		if (m_node_map.find(id) == m_node_map.end())
 		{
 			return nullptr;
 		}
-		if (m_node_map[owner_id].find(id) == m_node_map[owner_id].end())
-		{
-			return nullptr;
-		}
-		T* tmpNode = m_node_map[owner_id][id];
+		T* tmpNode = m_node_map[id];
 		((WheelList<T>*)tmpNode->wheel)->Erase(tmpNode);
-		m_node_map[owner_id].erase(id);
+		m_node_map.erase(id);
 		return tmpNode;
 	}
 
-	void Erase(int64_t owner_id, int32_t id)
-	{
-		if (m_node_map.find(owner_id) == m_node_map.end())
-		{
-			return;
-		}
-		m_node_map[owner_id].erase(id);
-	}
-
-	std::unordered_map<int64_t, std::unordered_map<int32_t, T*>>& GetAllNode() 
+	std::unordered_map<int32_t, T*>& GetAllNode() 
 	{
 		return m_node_map;
 	}
@@ -325,6 +312,6 @@ private:
 	int32_t m_wheel_cnt[WHEEL_CNT];
 	time_t m_cur_tick;
 
-	std::unordered_map<int64_t, std::unordered_map<int32_t, T*>> m_node_map;
+	std::unordered_map<int32_t, T*> m_node_map;
 };
 

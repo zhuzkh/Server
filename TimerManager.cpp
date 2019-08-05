@@ -13,11 +13,12 @@ TimerManager::~TimerManager()
 
 void TimerManager::Release()
 {
-	std::unordered_map<int64_t, std::unordered_map<int32_t, TimerNode*>>& node_map = m_time_wheel.GetAllNode();
+	std::unordered_map<int32_t, TimerNode*>& node_map = m_time_wheel.GetAllNode();
 	for (auto& data : node_map)
 	{
-		UnRegisterTimerBatch(data.first);
+		UnRegisterTimer(data.first);
 	}
+	m_timer_map.clear();
 }
 
 void TimerManager::recycle(TimerNode* node)
@@ -28,25 +29,21 @@ void TimerManager::recycle(TimerNode* node)
 	}
 }
 
-void TimerManager::UnRegisterTimer(int64_t owner_id, int32_t timer_id)
+void TimerManager::UnRegisterTimer(int32_t timer_id)
 {
-	TimerNode* node = m_time_wheel.PopAndErase(owner_id, timer_id);
+	TimerNode* node = m_time_wheel.PopAndErase(timer_id);
 	recycle(node);
 }
 
 void TimerManager::UnRegisterTimerBatch(int64_t owner_id)
 {
-	std::unordered_map<int64_t, std::unordered_map<int32_t, TimerNode*>> node_map = m_time_wheel.GetAllNode();
-	if (node_map.find(owner_id) == node_map.end())
+	if (m_timer_map.find(owner_id) == m_timer_map.end())
 	{
 		return;
 	}
-	for (auto& data : node_map[owner_id])
+	for (auto& data : m_timer_map[owner_id])
 	{
-		if (data.second)
-		{
-			UnRegisterTimer(owner_id, data.second->id);
-		}
+		UnRegisterTimer(data);
 	}
 }
 

@@ -81,7 +81,7 @@ public:
 
 	//删除计时器
 	void UnRegisterTimerBatch(int64_t owner_id);
-	void UnRegisterTimer(int64_t owner_id, int32_t timer_id);
+	void UnRegisterTimer(int32_t timer_id);
 	void Release();
 
 	//tick
@@ -91,6 +91,7 @@ private:
 
 private:
 	TimerWheel<TimerNode> m_time_wheel;
+	std::unordered_map<int64_t, std::set<int32_t>> m_timer_map;
 	int32_t m_max_id;
 };
 
