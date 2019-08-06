@@ -19,14 +19,13 @@ void AsioSocket::AsyncReadHeader()
 	MSG_DATA* buffer = MemoryPoolMultiParam<MsgHeader, char[MAX_MSG_LEN]>::GetInstance().GetObj();
 	if (!buffer)
 	{
-		LOG_ERROR("get header buffer err!");
 		return;
 	}
 	async_read(m_socket, boost::asio::buffer(&std::get<0>(buffer->m_param), sizeof(MsgHeader)), transfer_all(), std::bind(&AsioSocket::OnReaderHeader, this, std::placeholders::_1, std::placeholders::_2, buffer));
 	//m_socket.async_read_some(boost::asio::buffer(tmpBuff, MAX_MSG_LEN), std::bind(&AsioSocket::OnRead, this, std::placeholders::_1, std::placeholders::_2));
 }
 
-void AsioSocket::OnReaderHeader(error_code err, std::size_t bytes, MSG_DATA* pBuffer)
+void AsioSocket::OnReaderHeader(system::error_code err, std::size_t bytes, MSG_DATA* pBuffer)
 {
 	if (err)
 	{
@@ -53,7 +52,7 @@ void AsioSocket::AsyncReadBody(MSG_DATA* buffer)
 	async_read(m_socket, boost::asio::buffer(&std::get<1>(buffer->m_param), 128), transfer_all(), std::bind(&AsioSocket::OnReadBody, this, std::placeholders::_1, std::placeholders::_2, buffer));
 }
 
-void AsioSocket::OnReadBody(error_code err, std::size_t bytes, MSG_DATA* pBuffer)
+void AsioSocket::OnReadBody(system::error_code err, std::size_t bytes, MSG_DATA* pBuffer)
 {
 	if (err)
 	{
@@ -91,7 +90,7 @@ void AsioSocket::AsyncWrite(char* buff, size_t size)
 
 
 
-void AsioSocket::OnWrite(error_code err, std::size_t bytes, char* buffer)
+void AsioSocket::OnWrite(system::error_code err, std::size_t bytes, char* buffer)
 {
 	if (err)
 	{
@@ -99,7 +98,7 @@ void AsioSocket::OnWrite(error_code err, std::size_t bytes, char* buffer)
 	delete[] buffer;
 }
 
-void AsioSocket::OnConnect(error_code err)
+void AsioSocket::OnConnect(system::error_code err)
 {
 	if (m_connect_function)
 	{
@@ -107,12 +106,12 @@ void AsioSocket::OnConnect(error_code err)
 	}
 }
 
-void AsioSocket::RegisterReadFunc(std::function<void(AsioSocket*, error_code, std::size_t, MSG_DATA*)> read_func)
+void AsioSocket::RegisterReadFunc(std::function<void(AsioSocket*, system::error_code, std::size_t, MSG_DATA*)> read_func)
 {
 	m_read_function = read_func;
 }
 
-void AsioSocket::RegisterConnectfunc(std::function<void(AsioSocket*, error_code)> connect_func)
+void AsioSocket::RegisterConnectfunc(std::function<void(AsioSocket*, system::error_code)> connect_func)
 {
 	m_connect_function = connect_func;
 }
@@ -134,7 +133,7 @@ int AsioSocket::GetId()
 
 bool AsioSocket::Close()
 {
-	error_code err;
+	system::error_code err;
 	m_socket.close(err);
 	return true;
 }

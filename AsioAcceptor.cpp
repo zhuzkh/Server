@@ -16,7 +16,7 @@ void AsioAcceptor::AsyncAccept()
 bool AsioAcceptor::Initilize(std::string ip_address, int port)
 {
 	ip::tcp::endpoint endpoint(ip::make_address(ip_address), port);
-	error_code ec;
+	system::error_code ec;
 	m_acceptor.open(endpoint.protocol(), ec);
 	if (ec.value() != 0)
 	{
@@ -41,7 +41,7 @@ bool AsioAcceptor::Initilize(std::string ip_address, int port)
 	}
 	return true;
 }
-void AsioAcceptor::AcceptHandle(error_code ec, ip::tcp::socket socket)
+void AsioAcceptor::AcceptHandle(system::error_code ec, ip::tcp::socket socket)
 {
 	if (!m_accept_func)
 	{
@@ -51,7 +51,7 @@ void AsioAcceptor::AcceptHandle(error_code ec, ip::tcp::socket socket)
 
 	AsyncAccept();
 }
-void AsioAcceptor::RegisterAcceptFunc(std::function<void(error_code, ip::tcp::socket&)> func)
+void AsioAcceptor::RegisterAcceptFunc(std::function<void(system::error_code, ip::tcp::socket&)> func)
 {
 	m_accept_func = func;
 }

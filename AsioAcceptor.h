@@ -15,9 +15,9 @@ public:
 
 	void AsyncAccept();
 	bool Initilize(std::string ip_address, int port);
-	void AcceptHandle(error_code ec, ip::tcp::socket socket);
-	void RegisterAcceptFunc(std::function<void(error_code, ip::tcp::socket&)> func);
+	void AcceptHandle(system::error_code ec, ip::tcp::socket socket);
+	void RegisterAcceptFunc(std::function<void(system::error_code, ip::tcp::socket&)> func);
 private:
 	ip::tcp::acceptor m_acceptor;
-	std::function<void(error_code, ip::tcp::socket&)> m_accept_func;
+	std::function<void(system::error_code, ip::tcp::socket&)> m_accept_func;
 };

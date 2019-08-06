@@ -1,8 +1,6 @@
 #pragma once
-#include <memory>
 #include <functional>
 #include <list>
-#include <tuple>
 
 template <typename... Args>
 class Signal

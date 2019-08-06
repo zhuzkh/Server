@@ -8,7 +8,7 @@
 #define MESSAGE_CIRULAR_QUEUE_LENGTH			0x5000000
 #define MAX_HANDL_MSG_COUNT_ONCE				512
 using namespace boost::asio;
-using namespace boost::system;
+using namespace boost;
 class AsioSocket;
 class NetProxy : public Singleton<NetProxy>
 {
@@ -18,10 +18,10 @@ public:
 	void OnProcessMsg();
 	void ReceiveMsg();
 	void SendMsg();
-	void OnReceive(AsioSocket* socket, error_code err, std::size_t bytes, MSG_DATA* buffer);
-	void OnSend(AsioSocket* socket, error_code err, std::size_t bytes);
-	void OnAccept(error_code err, ip::tcp::socket& socket);
-	void OnConnect(AsioSocket* socket, error_code err);
+	void OnReceive(AsioSocket* socket, system::error_code err, std::size_t bytes, MSG_DATA* buffer);
+	void OnSend(AsioSocket* socket, system::error_code err, std::size_t bytes);
+	void OnAccept(system::error_code err, ip::tcp::socket& socket);
+	void OnConnect(AsioSocket* socket, system::error_code err);
 	char* GetReceiveBuff();
 	char* GetSendBuff();
 

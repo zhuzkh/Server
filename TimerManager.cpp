@@ -6,7 +6,6 @@ TimerManager::TimerManager() : m_max_id(0)
 	m_time_wheel.Init(TimeHelper::GetCurTime());
 }
 
-
 TimerManager::~TimerManager()
 {
 }
@@ -14,9 +13,13 @@ TimerManager::~TimerManager()
 void TimerManager::Release()
 {
 	std::unordered_map<int32_t, TimerNode*>& node_map = m_time_wheel.GetAllNode();
-	for (auto& data : node_map)
+	while (!node_map.empty())
 	{
-		UnRegisterTimer(data.first);
+		std::unordered_map<int32_t, TimerNode*>::iterator it = node_map.begin();
+		if (it != node_map.end())
+		{
+			UnRegisterTimer(it->first);
+		}
 	}
 	m_timer_map.clear();
 }
@@ -45,6 +48,7 @@ void TimerManager::UnRegisterTimerBatch(int64_t owner_id)
 	{
 		UnRegisterTimer(data);
 	}
+	m_timer_map[owner_id].clear();
 }
 
 void TimerManager::Tick(time_t now)
@@ -54,7 +58,6 @@ void TimerManager::Tick(time_t now)
 	while (node)
 	{
 		node->CallBack();
-		LOG_DEBUG("timer stamp : {}; id : {}", now, node->id);
 		TmpNode = node->next;
 		switch (node->type)
 		{

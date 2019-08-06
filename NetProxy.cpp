@@ -63,7 +63,7 @@ void NetProxy::SendMsg()
 	}
 }
 
-void NetProxy::OnReceive(AsioSocket* socket, error_code err, std::size_t bytes, MSG_DATA* buffer)
+void NetProxy::OnReceive(AsioSocket* socket, system::error_code err, std::size_t bytes, MSG_DATA* buffer)
 {
 	if (!socket)
 	{
@@ -88,14 +88,14 @@ void NetProxy::OnReceive(AsioSocket* socket, error_code err, std::size_t bytes, 
 	socket->AsyncReadHeader();
 }
 
-void NetProxy::OnSend(AsioSocket* socket, error_code err, std::size_t bytes)
+void NetProxy::OnSend(AsioSocket* socket, system::error_code err, std::size_t bytes)
 {
 	if (!socket)
 	{
 		return;
 	}
 }
-void NetProxy::OnAccept(error_code err, ip::tcp::socket& socket)
+void NetProxy::OnAccept(system::error_code err, ip::tcp::socket& socket)
 {
 	int socket_id = MakeSocketId();
 	AsioSocket* asioSocket = new AsioSocket(socket_id, std::move(socket));
@@ -108,7 +108,7 @@ void NetProxy::OnAccept(error_code err, ip::tcp::socket& socket)
 	asioSocket->AsyncReadHeader();
 }
 
-void NetProxy::OnConnect(AsioSocket* pSocket, error_code err)
+void NetProxy::OnConnect(AsioSocket* pSocket, system::error_code err)
 {
 	int socket_id = MakeSocketId();
 	if (err)

@@ -12,6 +12,7 @@ private:
 	friend Singleton<MemoryPoolMgr>;
 public:
 	void AddPool(MemoryPoolBase* pool_base);
+	void Release();
 private:
 	std::vector<MemoryPoolBase*> m_pool_vec;
 };

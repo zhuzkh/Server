@@ -21,14 +21,6 @@
 #endif	// _MSC_VER
 #include "MemoryPool.h"
 
-#pragma pack(push, 1)
-struct MsgHeader 
-{
-	int16_t length;
-	int32_t player_id;
-};
-#pragma pack(pop)
-
 enum
 {
 	SIZE_MSG_BUFF = (uint16_t)0xFFFF,		// 协议包编解码缓冲区的最大长度
@@ -90,5 +82,20 @@ enum ADDRESS_TYPE
 #define MAX_IP_STR_LENGTH			16
 #define MAX_REDEEMKEY_STR_LENGTH	20
 #define MAX_REDEEMEXTRA_STR_LENGTH	100
+
+#pragma pack(push, 1)
+struct MsgHeader
+{
+	int16_t length;
+	int32_t player_id;
+	int32_t msg_id;
+};
+#pragma pack(pop)
+
+struct MsgData
+{
+	MsgHeader header;
+	char body[MAX_MSG_LEN];
+};
 
 typedef MemoryObj<MsgHeader, char[MAX_MSG_LEN]> MSG_DATA;

@@ -2,7 +2,6 @@
 #include "TimerWheel.h"
 #include "TimeHelper.h"
 #include "MemoryPool.h"
-#include "CallbackDelegate.h"
 #include <set>
 #include <unordered_map>
 
@@ -71,12 +70,13 @@ public:
 	template<typename ...Args>
 	int32_t RegisterNormalTimer(int64_t owner_id, time_t time, std::function<void(Args...)> Func)
 	{
-		TimerNodeImpl<Args...>* node = MemoryPoolSingleParam<TimerNodeImpl<Args...>>::GetInstance().GetObj();
-		node->func = Func;
-		int32_t timer_id = ++m_max_id;
-		node->init(owner_id, timer_id, time, eTimerType::Normal);
-		m_time_wheel.Push(node);
-		return timer_id;
+// 		TimerNodeImpl<Args...>* node = MemoryPoolSingleParam<TimerNodeImpl<Args...>>::GetInstance().GetObj();
+// 		node->func = Func;
+// 		int32_t timer_id = ++m_max_id;
+// 		node->init(owner_id, timer_id, time, eTimerType::Normal);
+// 		m_time_wheel.Push(node);
+// 		return timer_id;
+		return 0;
 	}
 
 	//删除计时器

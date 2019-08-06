@@ -9,10 +9,9 @@
 #include "MemoryPool.h"
 #include "TimeHelper.h"
 #include "signal.h"
-#include "CallbackDelegate.h"
 #include <string>
 #include "TimerManager.h"
-
+#include "MemoryPoolManager.h"
 void Func(int a, std::string b)
 {
 	std::cout << a << '\t' << b << std::endl;
@@ -59,20 +58,24 @@ void AddTimer()
 void Release()
 {
 	TimerManager::GetInstance().Release();
-
+	MemoryPoolMgr::GetInstance().Release();
 }
 
 int main(int argc, char* argv[])
 {
 	Logger::GetInstance().Initlize("logger", "..\\log\\test.log");
-
+	MemoryPoolSingleParam<MsgData>::GetInstance();
 	TIME_DEBUG_START
-	AddTimer();
-	TIME_DEBUG_CUR
-		while (true)
+	//AddTimer();
+		for (size_t i = 0; i < 10000; i++)
 		{
-			TimerManager::GetInstance().Tick(TimeHelper::GetCurTime());
+			MemoryPoolSingleParam<MsgData>::GetInstance().GetObj();
 		}
+	TIME_DEBUG_CUR
+// 		while (true)
+// 		{
+// 			TimerManager::GetInstance().Tick(TimeHelper::GetCurTime());
+// 		}
 		// 
 		// 	NetProxy::GetInstance().Initlize();
 		//  	std::thread work_thread([]() { NetProxy::GetInstance().Update(); });
@@ -89,7 +92,7 @@ int main(int argc, char* argv[])
 		//  		acceptor.AsyncAccept();
 		//  		service.run();
 		//  	}
-		// 	system("pause");
+		::system("pause");
 		Release();
 	return 1;
 }

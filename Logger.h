@@ -24,7 +24,7 @@ public:
 	void DebugLog(spdlog::string_view_t fmt, const Args& ... args)
 	{
 #ifdef WIN32
-		//spdlog::debug(fmt, args...);
+		spdlog::debug(fmt, args...);
 #endif
 		m_logger->debug(fmt, args...);
 	}
