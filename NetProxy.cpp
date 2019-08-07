@@ -63,7 +63,7 @@ void NetProxy::SendMsg()
 	}
 }
 
-void NetProxy::OnReceive(AsioSocket* socket, system::error_code err, std::size_t bytes, MSG_DATA* buffer)
+void NetProxy::OnReceive(AsioSocket* socket, system::error_code err, std::size_t bytes, MemoryObj<MsgData>* buffer)
 {
 	if (!socket)
 	{
@@ -84,7 +84,8 @@ void NetProxy::OnReceive(AsioSocket* socket, system::error_code err, std::size_t
 			return;
 		}
 	}
-	LOG_INFO("receive client echo : {}, buffer size {}", bytes, strlen(std::get<1>(buffer->m_param)));
+	LOG_INFO("receive client echo : {}, buffer size {}", bytes, strlen(buffer->GetData<0>().body));
+	buffer->Recycle();
 	socket->AsyncReadHeader();
 }
 

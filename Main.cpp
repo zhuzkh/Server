@@ -64,13 +64,10 @@ void Release()
 int main(int argc, char* argv[])
 {
 	Logger::GetInstance().Initlize("logger", "..\\log\\test.log");
-	MemoryPoolSingleParam<MsgData>::GetInstance();
+	MemoryObj<MsgData>* obj = MemoryPool<MsgData>::GetInstance().GetObj();
+	obj->Recycle();
 	TIME_DEBUG_START
 	//AddTimer();
-		for (size_t i = 0; i < 10000; i++)
-		{
-			MemoryPoolSingleParam<MsgData>::GetInstance().GetObj();
-		}
 	TIME_DEBUG_CUR
 // 		while (true)
 // 		{
@@ -92,7 +89,8 @@ int main(int argc, char* argv[])
 		//  		acceptor.AsyncAccept();
 		//  		service.run();
 		//  	}
-		::system("pause");
-		Release();
+		Release();		
+	::system("pause");
+
 	return 1;
 }

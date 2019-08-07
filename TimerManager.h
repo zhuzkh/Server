@@ -68,15 +68,18 @@ private:
 	friend Singleton<TimerManager>;
 public:
 	template<typename ...Args>
-	int32_t RegisterNormalTimer(int64_t owner_id, time_t time, std::function<void(Args...)> Func)
+	int32_t RegisterNormalTimer(int64_t owner_id, time_t time, std::function<void(Args...)> func)
 	{
-// 		TimerNodeImpl<Args...>* node = MemoryPoolSingleParam<TimerNodeImpl<Args...>>::GetInstance().GetObj();
-// 		node->func = Func;
-// 		int32_t timer_id = ++m_max_id;
-// 		node->init(owner_id, timer_id, time, eTimerType::Normal);
-// 		m_time_wheel.Push(node);
-// 		return timer_id;
-		return 0;
+		TimerNodeImpl<Args...>* node = MemoryPoolSingleParam<TimerNodeImpl<Args...>>::GetInstance().GetObj();
+		if (!node)
+		{
+			return 0;
+		}
+		node->func = func;
+		int32_t timer_id = ++m_max_id;
+		node->init(owner_id, timer_id, time, eTimerType::Normal);
+		m_time_wheel.Push(node);
+		return timer_id;
 	}
 
 	//删除计时器

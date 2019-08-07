@@ -2,6 +2,7 @@
 #include "Logger.h"
 #include "Singleton.h"
 #include <vector>
+#include <tuple>
 class MemoryPoolBase;
 
 class MemoryPoolMgr : public Singleton<MemoryPoolMgr>

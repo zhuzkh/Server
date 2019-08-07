@@ -5,14 +5,14 @@
 #include "Singleton.h"
 #include <vector>
 #include "MemoryPoolManager.h"
-const int32_t DEFAULT_POOL_SIZE = 10000;
+const int32_t DEFAULT_POOL_SIZE = 1000;
 
 class MemoryPoolBase
 {
 public:
 	MemoryPoolBase()
 	{
-		MemoryPoolMgr::GetInstance().AddPool(this);
+ 		MemoryPoolMgr::GetInstance().AddPool(this);
 	}
 	virtual ~MemoryPoolBase()
 	{
@@ -32,40 +32,41 @@ public:
 	{
 
 	}
+	virtual void Recycle() = 0;
 };
 
 template <typename ... Args>
 class MemoryObj : public MemoryObjBase
 {
 public:
-	void Clear()
+	void Recycle()
 	{
-
+		m_func(this);
+	}
+	template <std::size_t size>
+	auto& GetData()
+	{
+		return std::get<size>(m_param);
 	}
 public:
 	std::tuple<Args...> m_param;
+	std::function<void(MemoryObj*)> m_func;
 };
 
 template <typename ... Args>
-class MemoryPoolMultiParam : public Singleton<MemoryPoolMultiParam<Args...>>, public MemoryPoolBase
+class MemoryPool : public Singleton<MemoryPool<Args...>>, public MemoryPoolBase
 {
 private:
-	friend Singleton<MemoryPoolMultiParam>;
-	MemoryPoolMultiParam() : m_max_size(DEFAULT_POOL_SIZE)
+	friend Singleton<MemoryPool>;
+	MemoryPool() : m_max_size(0)
 	{
-		for (uint32_t i = 0; i != m_max_size; ++i)
+		for (uint32_t i = 0; i != DEFAULT_POOL_SIZE; ++i)
 		{
-			MemoryObj<Args...>* pObj = new MemoryObj<Args...>();
-			if (!pObj)
-			{
-				LOG_ERROR("create memory obj failed!");
-				break;
-			}
-			m_object_list.push_back(pObj);
+			addObj();
 		}
 	}
 
-	~MemoryPoolMultiParam()
+	~MemoryPool()
 	{
 
 	}
@@ -81,12 +82,12 @@ public:
 				return nullptr;
 			}
 			++m_max_size;
+			obj->m_func = std::bind(&MemoryPool<Args...>::Recycle, this, std::placeholders::_1);
 			return obj;
 		}
 
 		MemoryObj<Args...>* obj = m_object_list.back();
 		m_object_list.pop_back();
-		obj->Clear();
 		return obj;
 	}
 
@@ -97,6 +98,19 @@ public:
 			return;
 		}
 		m_object_list.push_back(obj);
+	}
+
+	void Expand(uint32_t size)
+	{
+		if (m_max_size <= size)
+		{
+			return;
+		}
+		
+		for (uint32_t i = m_max_size; i <= size; ++i)
+		{
+			addObj();
+		}
 	}
 
 	void Release()
@@ -113,6 +127,19 @@ public:
 		m_object_list.clear();
 	}
 private:
+	void addObj()
+	{
+		MemoryObj<Args...>* pObj = new MemoryObj<Args...>();
+		if (!pObj)
+		{
+			LOG_ERROR("create memory obj failed!");
+			return;
+		}
+		m_object_list.push_back(pObj);
+		++m_max_size;
+		pObj->m_func = std::bind(&MemoryPool<Args...>::Recycle, this, std::placeholders::_1);
+	}
+private:
 	std::list<MemoryObj<Args ...>*> m_object_list;
 	uint32_t						m_max_size;
 };
@@ -122,17 +149,11 @@ private:
  {
  private:
  	friend Singleton<MemoryPoolSingleParam>;
-	MemoryPoolSingleParam() : m_max_size(DEFAULT_POOL_SIZE)
+	MemoryPoolSingleParam() : m_max_size(0)
  	{
- 		for (uint32_t i = 0; i != m_max_size; ++i)
+ 		for (uint32_t i = 0; i != DEFAULT_POOL_SIZE; ++i)
  		{
- 			T* pObj = new T();
- 			if (!pObj)
- 			{
- 				LOG_ERROR("create memory obj failed! {}");
- 				break;
- 			}
- 			m_object_list.push_back(pObj);
+			addObj();
  		}
  	}
 
@@ -159,6 +180,19 @@ private:
  		return obj;
  	}
  
+	void Expand(uint32_t size)
+	{
+		if (m_max_size <= size)
+		{
+			return;
+		}
+
+		for (uint32_t i = m_max_size; i <= size; ++i)
+		{
+			addObj();
+		}
+	}
+
  	void Recycle(T* obj)
  	{
  		if (!obj)
@@ -181,6 +215,19 @@ private:
 		}
 		m_object_list.clear();
 	}
+ private:
+	 void addObj()
+	 {
+		 T* pObj = new T();
+		 if (!pObj)
+		 {
+			 LOG_ERROR("create memory obj failed! {}");
+			 return;
+		 }
+		 m_object_list.push_back(pObj);
+		 ++m_max_size;
+	 }
+
  private:
  	std::list<T*>	m_object_list;
  	uint32_t		m_max_size;

@@ -18,7 +18,7 @@ public:
 	void OnProcessMsg();
 	void ReceiveMsg();
 	void SendMsg();
-	void OnReceive(AsioSocket* socket, system::error_code err, std::size_t bytes, MSG_DATA* buffer);
+	void OnReceive(AsioSocket* socket, system::error_code err, std::size_t bytes, MemoryObj<MsgData>* buffer);
 	void OnSend(AsioSocket* socket, system::error_code err, std::size_t bytes);
 	void OnAccept(system::error_code err, ip::tcp::socket& socket);
 	void OnConnect(AsioSocket* socket, system::error_code err);

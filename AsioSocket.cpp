@@ -16,16 +16,16 @@ void AsioSocket::AsyncConnect(std::string ip_address, int port)
 
 void AsioSocket::AsyncReadHeader()
 {
-	MSG_DATA* buffer = MemoryPoolMultiParam<MsgHeader, char[MAX_MSG_LEN]>::GetInstance().GetObj();
+	MemoryObj<MsgData>* buffer = MemoryPool<MsgData>::GetInstance().GetObj();
 	if (!buffer)
 	{
 		return;
 	}
-	async_read(m_socket, boost::asio::buffer(&std::get<0>(buffer->m_param), sizeof(MsgHeader)), transfer_all(), std::bind(&AsioSocket::OnReaderHeader, this, std::placeholders::_1, std::placeholders::_2, buffer));
+	async_read(m_socket, boost::asio::buffer(&buffer->GetData<0>().header, sizeof(MsgHeader)), transfer_all(), std::bind(&AsioSocket::OnReaderHeader, this, std::placeholders::_1, std::placeholders::_2, buffer));
 	//m_socket.async_read_some(boost::asio::buffer(tmpBuff, MAX_MSG_LEN), std::bind(&AsioSocket::OnRead, this, std::placeholders::_1, std::placeholders::_2));
 }
 
-void AsioSocket::OnReaderHeader(system::error_code err, std::size_t bytes, MSG_DATA* pBuffer)
+void AsioSocket::OnReaderHeader(system::error_code err, std::size_t bytes, MemoryObj<MsgData>* pBuffer)
 {
 	if (err)
 	{
@@ -47,12 +47,12 @@ void AsioSocket::OnReaderHeader(system::error_code err, std::size_t bytes, MSG_D
 	AsyncReadBody(pBuffer);
 }
 
-void AsioSocket::AsyncReadBody(MSG_DATA* buffer)
+void AsioSocket::AsyncReadBody(MemoryObj<MsgData>* buffer)
 {
-	async_read(m_socket, boost::asio::buffer(&std::get<1>(buffer->m_param), 128), transfer_all(), std::bind(&AsioSocket::OnReadBody, this, std::placeholders::_1, std::placeholders::_2, buffer));
+	async_read(m_socket, boost::asio::buffer(buffer->GetData<0>().body, 128), transfer_all(), std::bind(&AsioSocket::OnReadBody, this, std::placeholders::_1, std::placeholders::_2, buffer));
 }
 
-void AsioSocket::OnReadBody(system::error_code err, std::size_t bytes, MSG_DATA* pBuffer)
+void AsioSocket::OnReadBody(system::error_code err, std::size_t bytes, MemoryObj<MsgData>* pBuffer)
 {
 	if (err)
 	{
@@ -106,7 +106,7 @@ void AsioSocket::OnConnect(system::error_code err)
 	}
 }
 
-void AsioSocket::RegisterReadFunc(std::function<void(AsioSocket*, system::error_code, std::size_t, MSG_DATA*)> read_func)
+void AsioSocket::RegisterReadFunc(std::function<void(AsioSocket*, system::error_code, std::size_t, MemoryObj<MsgData>*)> read_func)
 {
 	m_read_function = read_func;
 }
