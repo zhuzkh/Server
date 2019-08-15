@@ -51,7 +51,7 @@ public:
 	}
 	void Recycle()
 	{
-		MemoryPoolSingleParam<TimerNodeImpl<Args...>>::GetInstance().Recycle(this);
+		MemoryPool<TimerNodeImpl<Args...>>::GetInstance().Recycle(this);
 	}
 	std::function<void(Args...)> func;
 };
@@ -70,7 +70,7 @@ public:
 	template<typename ...Args>
 	int32_t RegisterNormalTimer(int64_t owner_id, time_t time, std::function<void(Args...)> func)
 	{
-		TimerNodeImpl<Args...>* node = MemoryPoolSingleParam<TimerNodeImpl<Args...>>::GetInstance().GetObj();
+		TimerNodeImpl<Args...>* node = MemoryPool<TimerNodeImpl<Args...>>::GetInstance().GetObj();
 		if (!node)
 		{
 			return 0;

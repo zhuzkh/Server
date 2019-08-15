@@ -15,9 +15,12 @@ public:
 	void InfoLog(spdlog::string_view_t fmt, const Args& ... args)
 	{
 #ifdef WIN32
-		spdlog::info(fmt, args...);
+ 		spdlog::info(fmt, args...);
 #endif
-		m_logger->info(fmt, args...);
+		if (m_logger)
+		{
+			m_logger->info(fmt, args...);
+		}
 	}
 
 	template<typename... Args>
@@ -26,7 +29,10 @@ public:
 #ifdef WIN32
 		spdlog::debug(fmt, args...);
 #endif
-		m_logger->debug(fmt, args...);
+		if (m_logger)
+		{
+			m_logger->debug(fmt, args...);
+		}
 	}
 
 	template<typename... Args>
@@ -35,7 +41,10 @@ public:
 #ifdef WIN32
 		spdlog::warn(fmt, args...);
 #endif
-		m_logger->warn(fmt, args...);
+		if (m_logger)
+		{
+			m_logger->warn(fmt, args...);
+		}
 	}
 
 	template<typename... Args>
@@ -44,7 +53,10 @@ public:
 #ifdef WIN32
 		spdlog::error(fmt, args...);
 #endif
-		m_logger->error(fmt, args...);
+		if (m_logger)
+		{
+			m_logger->error(fmt, args...);
+		}
 	}
 
 	template<typename... Args>
@@ -53,7 +65,10 @@ public:
 #ifdef WIN32
 		spdlog::critical(fmt, args...);
 #endif		
-		m_logger->info(fmt, args...);
+		if (m_logger)
+		{
+			m_logger->info(fmt, args...);
+		}
 	}
 
 	template<typename... Args>
@@ -62,7 +77,10 @@ public:
 #ifdef WIN32
 		spdlog::trace(fmt, args...);
 #endif
-		m_logger->trace(fmt, args...);
+		if (m_logger)
+		{
+			m_logger->trace(fmt, args...);
+		}
 	}
 
 	bool makeDir(std::string logger_file_path);
@@ -78,7 +96,8 @@ private:
 //strcgr:查找字符在指定字符串首次出现的位置
 #define __FILENAME__ (strrchr(__FILE__,'\\')?(strrchr(__FILE__,'\\')+1):__FILE__)
 #else
-#define __FILENAME__ (strrchr(__FILE__,'/')?(strrchr(__FILE__,'/')+1):__FILE__)
+//#define __FILENAME__ (strrchr(__FILE__,'/')?(strrchr(__FILE__,'/')+1):__FILE__)
+#define __FILENAME__ (__FILE__)
 #endif //_WIN32
 
 //在错误级别的日志后面追加文件名，行号，函数名

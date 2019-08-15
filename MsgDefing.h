@@ -78,7 +78,6 @@ enum ADDRESS_TYPE
 	//注意，TYPE值范围为[0,255]
 };
 
-#define MAX_MSG_LEN                (60 * 1024)  /* c2s,s2c的最大包长度 40k*/
 #define MAX_IP_STR_LENGTH			16
 #define MAX_REDEEMKEY_STR_LENGTH	20
 #define MAX_REDEEMEXTRA_STR_LENGTH	100
@@ -86,16 +85,60 @@ enum ADDRESS_TYPE
 #pragma pack(push, 1)
 struct MsgHeader
 {
-	int16_t length;
-	int32_t player_id;
-	int32_t msg_id;
+	uint16_t length;
+	uint32_t player_id;
+	uint32_t msg_id;
 };
 #pragma pack(pop)
 
-struct MsgData
+
+constexpr int32_t MAX_MSG_LEN = 40 * 1024;  /* c2s,s2c的最大包长度 40k*/
+constexpr int32_t MSG_HEADER_LEN = sizeof(MsgHeader);
+constexpr int32_t MSG_BODY_LEN = MAX_MSG_LEN - MSG_HEADER_LEN;
+
+namespace eMSG_BUFFER_LENGTH
 {
-	MsgHeader header;
-	char body[MAX_MSG_LEN];
+	enum e
+	{
+		BYTES_32 = 32,
+		BYTES_64 = 64,
+		BYTES_128 = 128,
+		BYTES_256 = 256,
+		BYTES_512 = 512,
+		BYTES_1024 = 1024,
+		BYTES_2048 = 2048,
+		BYTES_4096 = 4096,
+ 		BYTES_MAX = MAX_MSG_LEN,
+	};
+}
+
+class MsgBufferBase
+{
+public:
+	MsgBufferBase() : p_data(nullptr)
+	{
+
+	}
+	virtual void Recycle() = 0;
+	char* p_data;
 };
 
-typedef MemoryObj<MsgHeader, char[MAX_MSG_LEN]> MSG_DATA;
+template<size_t size>
+class MsgBuffer : public MsgBufferBase
+{
+public:
+	MsgBuffer()
+	{
+		memset(m_data, 0, size);
+		p_data = m_data;
+	}
+	void Recycle()
+	{
+		m_func(this);
+	}
+private:
+	char m_data[size];
+	std::function<void(MsgBuffer*)> m_func;
+};
+
+

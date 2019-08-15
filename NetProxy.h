@@ -18,14 +18,14 @@ public:
 	void OnProcessMsg();
 	void ReceiveMsg();
 	void SendMsg();
-	void OnReceive(AsioSocket* socket, system::error_code err, std::size_t bytes, MemoryObj<MsgData>* buffer);
+	//////////////////////////////////////////////////////////////////////////
+	//网络线程调用
+	void OnReceive(AsioSocket* socket, system::error_code err, std::size_t bytes, MsgBufferBase* buffer);
 	void OnSend(AsioSocket* socket, system::error_code err, std::size_t bytes);
 	void OnAccept(system::error_code err, ip::tcp::socket& socket);
-	void OnConnect(AsioSocket* socket, system::error_code err);
-	char* GetReceiveBuff();
-	char* GetSendBuff();
-
+	void OnConnect(AsioSocket* socket, system::error_code err);	
 	int32_t MakeSocketId();
+	//////////////////////////////////////////////////////////////////////////
 private:
 	char m_send_temp_buf[MAX_MSG_LEN];
 	char m_recive_temp_buf[MAX_MSG_LEN];

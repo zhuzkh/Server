@@ -54,43 +54,48 @@ void AddTimer()
 	}
 }
 
-
 void Release()
 {
 	TimerManager::GetInstance().Release();
 	MemoryPoolMgr::GetInstance().Release();
 }
+void Update()
+{
+
+}
 
 int main(int argc, char* argv[])
 {
 	Logger::GetInstance().Initlize("logger", "..\\log\\test.log");
-	MemoryObj<MsgData>* obj = MemoryPool<MsgData>::GetInstance().GetObj();
-	obj->Recycle();
-	TIME_DEBUG_START
-	//AddTimer();
-	TIME_DEBUG_CUR
-// 		while (true)
-// 		{
-// 			TimerManager::GetInstance().Tick(TimeHelper::GetCurTime());
-// 		}
-		// 
-		// 	NetProxy::GetInstance().Initlize();
-		//  	std::thread work_thread([]() { NetProxy::GetInstance().Update(); });
-		//  	io_context service;
-		//  	AsioAcceptor acceptor(service);
-		//  	if (!acceptor.Initilize("127.0.0.1", 8888))
-		//  	{
-		//  		LOG_INFO("acceptor initilize err {}", "lalala");
-		//  	}
-		//  	else
-		//  	{
-		//  		acceptor.RegisterAcceptFunc(std::bind(&NetProxy::OnAccept, &NetProxy::GetInstance(), std::placeholders::_1, std::placeholders::_2));
-		//  		LOG_INFO("acceptor start");
-		//  		acceptor.AsyncAccept();
-		//  		service.run();
-		//  	}
-		Release();		
-	::system("pause");
+// 	MemoryObj<MsgData>* obj = MemoryPool<MsgData>::GetInstance().GetObj();
+// 	obj->Recycle();
+	//TIME_DEBUG_START
+	//	AddTimer();
+	//TIME_DEBUG_CUR
+	//	while (true)
+	//	{
+	//		TimerManager::GetInstance().Tick(TimeHelper::GetCurTime());
+	//	}
 
+	NetProxy::GetInstance().Initlize();
+	std::thread work_thread([]() { NetProxy::GetInstance().Update(); });
+	io_context service;
+	AsioAcceptor acceptor(service);
+	if (!acceptor.Initilize("127.0.0.1", 8888))
+	{
+		LOG_INFO("acceptor initilize err {}", "lalala");
+	}
+	else
+	{
+		acceptor.RegisterAcceptFunc(std::bind(&NetProxy::OnAccept, &NetProxy::GetInstance(), std::placeholders::_1, std::placeholders::_2));
+		LOG_INFO("acceptor start");
+		acceptor.AsyncAccept();
+	}
+
+
+	service.run();
+	
+	Release();		
+	::system("pause");
 	return 1;
 }

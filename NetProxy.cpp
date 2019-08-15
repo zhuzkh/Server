@@ -1,5 +1,6 @@
 #include "NetProxy.h"
 #include "AsioSocket.h"
+#include "MemoryPool.h"
 bool NetProxy::Initlize()
 {
 	if (!m_receive_queue.Init(MESSAGE_CIRULAR_QUEUE_LENGTH))
@@ -63,7 +64,7 @@ void NetProxy::SendMsg()
 	}
 }
 
-void NetProxy::OnReceive(AsioSocket* socket, system::error_code err, std::size_t bytes, MemoryObj<MsgData>* buffer)
+void NetProxy::OnReceive(AsioSocket* socket, system::error_code err, std::size_t bytes, MsgBufferBase* buffer)
 {
 	if (!socket)
 	{
@@ -84,9 +85,13 @@ void NetProxy::OnReceive(AsioSocket* socket, system::error_code err, std::size_t
 			return;
 		}
 	}
-	LOG_INFO("receive client echo : {}, buffer size {}", bytes, strlen(buffer->GetData<0>().body));
-	buffer->Recycle();
-	socket->AsyncReadHeader();
+	else
+	{
+		char tmp[256] = { 0 };
+		memmove(tmp, buffer->p_data + MSG_HEADER_LEN, bytes - MSG_HEADER_LEN);
+		LOG_INFO("receive client echo : {}", tmp);
+		socket->AsyncReadHeader();
+	}
 }
 
 void NetProxy::OnSend(AsioSocket* socket, system::error_code err, std::size_t bytes)
@@ -106,6 +111,7 @@ void NetProxy::OnAccept(system::error_code err, ip::tcp::socket& socket)
 	}
 	asioSocket->RegisterReadFunc(std::bind(&NetProxy::OnReceive, &NetProxy::GetInstance(), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
 	m_client_socket_map[socket_id] = asioSocket;
+
 	asioSocket->AsyncReadHeader();
 }
 
@@ -122,16 +128,6 @@ void NetProxy::OnConnect(AsioSocket* pSocket, system::error_code err)
 		return;
 	}
 	m_server_socket_map[socket_id] = pSocket;
-}
-
-char* NetProxy::GetReceiveBuff()
-{
-	return m_recive_temp_buf;
-}
-
-char* NetProxy::GetSendBuff()
-{
-	return m_send_temp_buf;
 }
 
 int32_t NetProxy::MakeSocketId()

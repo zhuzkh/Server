@@ -7,20 +7,6 @@
 #include "MemoryPoolManager.h"
 const int32_t DEFAULT_POOL_SIZE = 1000;
 
-class MemoryPoolBase
-{
-public:
-	MemoryPoolBase()
-	{
- 		MemoryPoolMgr::GetInstance().AddPool(this);
-	}
-	virtual ~MemoryPoolBase()
-	{
-
-	}
-	virtual void Release() = 0;
-};
-
 class MemoryObjBase
 {
 public:
@@ -53,12 +39,26 @@ public:
 	std::function<void(MemoryObj*)> m_func;
 };
 
+class MemoryPoolBase
+{
+public:
+	MemoryPoolBase()
+	{
+		MemoryPoolMgr::GetInstance().AddPool(this);
+	}
+	virtual ~MemoryPoolBase()
+	{
+
+	}
+	virtual void Release() = 0;
+};
+
 template <typename ... Args>
-class MemoryPool : public Singleton<MemoryPool<Args...>>, public MemoryPoolBase
+class MemoryPoolMultiParam : public Singleton<MemoryPoolMultiParam<Args...>>, public MemoryPoolBase
 {
 private:
-	friend Singleton<MemoryPool>;
-	MemoryPool() : m_max_size(0)
+	friend Singleton<MemoryPoolMultiParam>;
+	MemoryPoolMultiParam() : m_max_size(0)
 	{
 		for (uint32_t i = 0; i != DEFAULT_POOL_SIZE; ++i)
 		{
@@ -66,7 +66,7 @@ private:
 		}
 	}
 
-	~MemoryPool()
+	~MemoryPoolMultiParam()
 	{
 
 	}
@@ -82,7 +82,7 @@ public:
 				return nullptr;
 			}
 			++m_max_size;
-			obj->m_func = std::bind(&MemoryPool<Args...>::Recycle, this, std::placeholders::_1);
+			obj->m_func = std::bind(&MemoryPoolMultiParam<Args...>::Recycle, this, std::placeholders::_1);
 			return obj;
 		}
 
@@ -100,7 +100,7 @@ public:
 		m_object_list.push_back(obj);
 	}
 
-	void Expand(uint32_t size)
+	void Resize(uint32_t size)
 	{
 		if (m_max_size <= size)
 		{
@@ -137,7 +137,7 @@ private:
 		}
 		m_object_list.push_back(pObj);
 		++m_max_size;
-		pObj->m_func = std::bind(&MemoryPool<Args...>::Recycle, this, std::placeholders::_1);
+		pObj->m_func = std::bind(&MemoryPoolMultiParam<Args...>::Recycle, this, std::placeholders::_1);
 	}
 private:
 	std::list<MemoryObj<Args ...>*> m_object_list;
@@ -145,11 +145,11 @@ private:
 };
 
  template <typename T>
- class MemoryPoolSingleParam : public Singleton<MemoryPoolSingleParam<T>>, public MemoryPoolBase
+ class MemoryPool : public Singleton<MemoryPool<T>>, public MemoryPoolBase
  {
  private:
- 	friend Singleton<MemoryPoolSingleParam>;
-	MemoryPoolSingleParam() : m_max_size(0)
+ 	friend Singleton<MemoryPool>;
+	MemoryPool() : m_max_size(0)
  	{
  		for (uint32_t i = 0; i != DEFAULT_POOL_SIZE; ++i)
  		{
@@ -157,7 +157,7 @@ private:
  		}
  	}
 
- 	~MemoryPoolSingleParam()
+ 	~MemoryPool()
  	{
  	}
  public:
@@ -180,7 +180,7 @@ private:
  		return obj;
  	}
  
-	void Expand(uint32_t size)
+	void Resize(uint32_t size)
 	{
 		if (m_max_size <= size)
 		{

@@ -1,7 +1,26 @@
 #include "AsioSocket.h"
+std::vector<eMSG_BUFFER_LENGTH::e> MSG_LENGTH_VEC = {
+	eMSG_BUFFER_LENGTH::BYTES_32,
+	eMSG_BUFFER_LENGTH::BYTES_64,
+	eMSG_BUFFER_LENGTH::BYTES_128,
+	eMSG_BUFFER_LENGTH::BYTES_256,
+	eMSG_BUFFER_LENGTH::BYTES_512,
+	eMSG_BUFFER_LENGTH::BYTES_1024,
+	eMSG_BUFFER_LENGTH::BYTES_2048,
+	eMSG_BUFFER_LENGTH::BYTES_4096,
+	eMSG_BUFFER_LENGTH::BYTES_MAX
+};
+
+
+
 AsioSocket::AsioSocket(int id, ip::tcp::socket socket) : m_socket(std::move(socket)), m_id(id)
 {
+	memset(&m_header_buffer, 0, MSG_HEADER_LEN);
+}
 
+AsioSocket::AsioSocket(io_context& service) : m_socket(service), m_id(0)
+{
+	memset(&m_header_buffer, 0, MSG_HEADER_LEN);
 }
 
 AsioSocket::~AsioSocket()
@@ -16,16 +35,11 @@ void AsioSocket::AsyncConnect(std::string ip_address, int port)
 
 void AsioSocket::AsyncReadHeader()
 {
-	MemoryObj<MsgData>* buffer = MemoryPool<MsgData>::GetInstance().GetObj();
-	if (!buffer)
-	{
-		return;
-	}
-	async_read(m_socket, boost::asio::buffer(&buffer->GetData<0>().header, sizeof(MsgHeader)), transfer_all(), std::bind(&AsioSocket::OnReaderHeader, this, std::placeholders::_1, std::placeholders::_2, buffer));
-	//m_socket.async_read_some(boost::asio::buffer(tmpBuff, MAX_MSG_LEN), std::bind(&AsioSocket::OnRead, this, std::placeholders::_1, std::placeholders::_2));
+	memset(&m_header_buffer, 0, MSG_HEADER_LEN);
+	async_read(m_socket, boost::asio::buffer(&m_header_buffer, MSG_HEADER_LEN), transfer_all(), std::bind(&AsioSocket::OnReaderHeader, this, std::placeholders::_1, std::placeholders::_2));
 }
 
-void AsioSocket::OnReaderHeader(system::error_code err, std::size_t bytes, MemoryObj<MsgData>* pBuffer)
+void AsioSocket::OnReaderHeader(system::error_code err, std::size_t bytes)
 {
 	if (err)
 	{
@@ -38,64 +52,101 @@ void AsioSocket::OnReaderHeader(system::error_code err, std::size_t bytes, Memor
 		{
 			if (m_read_function)
 			{
-				m_read_function(this, err, bytes, pBuffer);
+				m_read_function(this, err, bytes, nullptr);
 			}
 		}
 
 		return;
 	}
-	AsyncReadBody(pBuffer);
+	
+	if (m_header_buffer.length > MSG_BODY_LEN)
+	{
+		LOG_ERROR("read msg out of size; size[{}], msg id[{}]", m_header_buffer.length, 0);
+		return;
+	}
+	MsgBufferBase* buffer = GetMsgBuffer(MSG_HEADER_LEN + m_header_buffer.length);
+	if (!buffer)
+	{
+		return;
+	}
+	memmove(buffer->p_data, &m_header_buffer, MSG_HEADER_LEN);
+	AsyncReadBody(buffer, m_header_buffer.length - MSG_HEADER_LEN);
 }
 
-void AsioSocket::AsyncReadBody(MemoryObj<MsgData>* buffer)
+void AsioSocket::AsyncReadBody(MsgBufferBase* buffer, size_t body_length)
 {
-	async_read(m_socket, boost::asio::buffer(buffer->GetData<0>().body, 128), transfer_all(), std::bind(&AsioSocket::OnReadBody, this, std::placeholders::_1, std::placeholders::_2, buffer));
+	async_read(m_socket, boost::asio::buffer(buffer->p_data + MSG_HEADER_LEN, body_length), transfer_all(), std::bind(&AsioSocket::OnReadBody, this, std::placeholders::_1, std::placeholders::_2, buffer));
 }
 
-void AsioSocket::OnReadBody(system::error_code err, std::size_t bytes, MemoryObj<MsgData>* pBuffer)
+void AsioSocket::OnReadBody(system::error_code err, std::size_t bytes, MsgBufferBase* pBuffer)
 {
 	if (err)
 	{
 		if (err.value() == try_again || err.value() == would_block || err.value() == interrupted)
 		{
 			LOG_ERROR(err.message());
-			AsyncReadBody(pBuffer);
+			AsyncReadBody(pBuffer, bytes);
 		}
 	}
 	if (!m_read_function)
 	{
 		return;
 	}
-	m_read_function(this, err, bytes + sizeof(MsgHeader), pBuffer);
+	m_read_function(this, err, bytes + MSG_HEADER_LEN, pBuffer);
+	pBuffer->Recycle();
 }
 
 void AsioSocket::AsyncWrite(std::string str)
 {
-	//char* tmpBuff = (char*)NetProxy::GetInstance().GetSendBuff();
-	char* tmp_buffer = new char[str.size()];
-	memmove(tmp_buffer, str.c_str(), str.size());
-	async_write(m_socket, boost::asio::buffer(tmp_buffer, MAX_MSG_LEN), transfer_all(), std::bind(&AsioSocket::OnWrite, this, std::placeholders::_1, std::placeholders::_2, tmp_buffer));
+	uint32_t str_size = str.size() + MSG_HEADER_LEN;
+	MsgHeader header = { 0 };
+	header.length = (uint16_t)str_size;
+	if (str_size > MAX_MSG_LEN)
+	{
+		LOG_ERROR("string out of size; size[{}], msg id[{}]", str_size, header.msg_id);
+		return;
+	}
+	MsgBufferBase* buffer = GetMsgBuffer(str_size);
+	if (!buffer)
+	{
+		return;
+	}
+	memmove(buffer->p_data, &header, MSG_HEADER_LEN);
+	memmove(buffer->p_data + MSG_HEADER_LEN, str.c_str(), str.size());
+	async_write(m_socket, boost::asio::buffer(buffer->p_data, header.length), transfer_all(), std::bind(&AsioSocket::OnWrite, this, std::placeholders::_1, std::placeholders::_2, buffer));
 }
 
-void AsioSocket::AsyncWrite(char* buff, size_t size)
+void AsioSocket::AsyncWrite(char* str, size_t size)
 {
-	//char* tmpBuffer = (char*)NetProxy::GetInstance().GetSendBuff();
-	char* tmp_buffer = new char[size];
-	memmove(tmp_buffer, buff, size);
-	async_write(m_socket, boost::asio::buffer(tmp_buffer, size), transfer_all(), std::bind(&AsioSocket::OnWrite, this, std::placeholders::_1, std::placeholders::_2, tmp_buffer));
-	//m_socket.async_write_some(buffer(tmpBuff, MAX_MSG_LEN), std::bind(&AsioSocket::OnWrite, this, std::placeholders::_1, std::placeholders::_2));
+	uint32_t str_size = size + MSG_HEADER_LEN;	
+	MsgHeader header = { 0 };
+	header.length = (uint16_t)str_size;
+	if (str_size > MAX_MSG_LEN)
+	{
+		LOG_ERROR("write msg out of size; size[{}], msg id[{}]", str_size, header.msg_id);
+		return;
+	}
+	MsgBufferBase* buffer = GetMsgBuffer(str_size);
+	if (!buffer)
+	{
+		return;
+	}
+	memmove(buffer->p_data, &header, MSG_HEADER_LEN);
+	memmove(buffer->p_data + MSG_HEADER_LEN, str, size);
+	async_write(m_socket, boost::asio::buffer(buffer->p_data, header.length), transfer_all(), std::bind(&AsioSocket::OnWrite, this, std::placeholders::_1, std::placeholders::_2, buffer));
 }
 
-
-
-
-
-void AsioSocket::OnWrite(system::error_code err, std::size_t bytes, char* buffer)
+void AsioSocket::OnWrite(system::error_code err, std::size_t bytes, MsgBufferBase* buffer)
 {
 	if (err)
 	{
+		LOG_ERROR(err.message());
 	}
-	delete[] buffer;
+	if (m_write_function)
+	{
+		m_write_function(this, err);
+	}
+	buffer->Recycle();
 }
 
 void AsioSocket::OnConnect(system::error_code err)
@@ -106,9 +157,83 @@ void AsioSocket::OnConnect(system::error_code err)
 	}
 }
 
-void AsioSocket::RegisterReadFunc(std::function<void(AsioSocket*, system::error_code, std::size_t, MemoryObj<MsgData>*)> read_func)
+MsgBufferBase* AsioSocket::GetMsgBuffer(size_t msg_len)
+{
+	eMSG_BUFFER_LENGTH::e buffer_len = GetMsgBufferLen(msg_len);
+	switch (buffer_len)
+	{
+	case eMSG_BUFFER_LENGTH::BYTES_32:
+	{
+		GET_MSG_Buffer(eMSG_BUFFER_LENGTH::BYTES_32);
+	}
+	break;
+	case eMSG_BUFFER_LENGTH::BYTES_64:
+	{
+		GET_MSG_Buffer(eMSG_BUFFER_LENGTH::BYTES_64);
+	}
+	break;
+	case eMSG_BUFFER_LENGTH::BYTES_128:
+	{
+		GET_MSG_Buffer(eMSG_BUFFER_LENGTH::BYTES_128);
+	}
+	break;
+	case eMSG_BUFFER_LENGTH::BYTES_256:
+	{
+		GET_MSG_Buffer(eMSG_BUFFER_LENGTH::BYTES_256);
+	}
+	break;
+	case eMSG_BUFFER_LENGTH::BYTES_512:
+	{
+		GET_MSG_Buffer(eMSG_BUFFER_LENGTH::BYTES_512);
+	}
+	break;
+	case eMSG_BUFFER_LENGTH::BYTES_1024:
+	{
+		GET_MSG_Buffer(eMSG_BUFFER_LENGTH::BYTES_1024);
+	}
+	break;
+	case eMSG_BUFFER_LENGTH::BYTES_2048:
+	{
+		GET_MSG_Buffer(eMSG_BUFFER_LENGTH::BYTES_2048);
+	}
+	break;
+	case eMSG_BUFFER_LENGTH::BYTES_4096:
+	{	
+		GET_MSG_Buffer(eMSG_BUFFER_LENGTH::BYTES_4096);
+	}
+	break;
+	case eMSG_BUFFER_LENGTH::BYTES_MAX:
+	default:
+	{
+		GET_MSG_Buffer(eMSG_BUFFER_LENGTH::BYTES_MAX);
+	}
+	break;
+	}
+
+	return nullptr;
+}
+
+eMSG_BUFFER_LENGTH::e AsioSocket::GetMsgBufferLen(size_t msg_len)
+{
+	size_t vec_size = MSG_LENGTH_VEC.size();
+	for (size_t i = 0; i != vec_size; ++i)
+	{
+		if (msg_len <= (size_t)MSG_LENGTH_VEC[i])
+		{
+			return MSG_LENGTH_VEC[i];
+		}
+	}
+	return eMSG_BUFFER_LENGTH::BYTES_MAX;
+}
+
+void AsioSocket::RegisterReadFunc(std::function<void(AsioSocket*, system::error_code, std::size_t, MsgBufferBase*)> read_func)
 {
 	m_read_function = read_func;
+}
+
+void AsioSocket::RegisterWriteFunc(std::function<void(AsioSocket*, system::error_code)> write_func)
+{
+	m_write_function = write_func;
 }
 
 void AsioSocket::RegisterConnectfunc(std::function<void(AsioSocket*, system::error_code)> connect_func)
