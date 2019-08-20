@@ -59,7 +59,7 @@ void AsioSocket::OnReaderHeader(system::error_code err, std::size_t bytes)
 		{
 			if (m_read_function)
 			{
-				m_read_function(this, err, bytes, nullptr);
+				m_read_function(shared_from_this(), err, bytes, nullptr);
 			}
 		}
 
@@ -82,7 +82,7 @@ void AsioSocket::OnReaderHeader(system::error_code err, std::size_t bytes)
 
 void AsioSocket::AsyncReadBody(MsgBufferBase* buffer, size_t body_length)
 {
-	async_read(m_socket, boost::asio::buffer(buffer->p_data + MSG_HEADER_LEN, body_length), transfer_all(), std::bind(&AsioSocket::OnReadBody, this, std::placeholders::_1, std::placeholders::_2, buffer));
+	async_read(m_socket, boost::asio::buffer(buffer->p_data + MSG_HEADER_LEN, body_length), transfer_all(), std::bind(&AsioSocket::OnReadBody, shared_from_this(), std::placeholders::_1, std::placeholders::_2, buffer));
 }
 
 void AsioSocket::OnReadBody(system::error_code err, std::size_t bytes, MsgBufferBase* pBuffer)
@@ -99,7 +99,7 @@ void AsioSocket::OnReadBody(system::error_code err, std::size_t bytes, MsgBuffer
 	{
 		return;
 	}
-	m_read_function(this, err, bytes, pBuffer);
+	m_read_function(shared_from_this(), err, bytes, pBuffer);
 	pBuffer->Recycle();
 }
 
@@ -120,7 +120,7 @@ void AsioSocket::AsyncWrite(std::string str)
 	}
 	memmove(buffer->p_data, &header, MSG_HEADER_LEN);
 	memmove(buffer->p_data + MSG_HEADER_LEN, str.c_str(), str.size());
-	async_write(m_socket, boost::asio::buffer(buffer->p_data, header.length), transfer_all(), std::bind(&AsioSocket::OnWrite, this, std::placeholders::_1, std::placeholders::_2, buffer));
+	async_write(m_socket, boost::asio::buffer(buffer->p_data, header.length), transfer_all(), std::bind(&AsioSocket::OnWrite, shared_from_this(), std::placeholders::_1, std::placeholders::_2, buffer));
 }
 
 void AsioSocket::AsyncWrite(char* str, size_t size)
@@ -140,7 +140,7 @@ void AsioSocket::AsyncWrite(char* str, size_t size)
 	}
 	memmove(buffer->p_data, &header, MSG_HEADER_LEN);
 	memmove(buffer->p_data + MSG_HEADER_LEN, str, size);
-	async_write(m_socket, boost::asio::buffer(buffer->p_data, header.length), transfer_all(), std::bind(&AsioSocket::OnWrite, this, std::placeholders::_1, std::placeholders::_2, buffer));
+	async_write(m_socket, boost::asio::buffer(buffer->p_data, header.length), transfer_all(), std::bind(&AsioSocket::OnWrite, shared_from_this(), std::placeholders::_1, std::placeholders::_2, buffer));
 }
 
 void AsioSocket::OnWrite(system::error_code err, std::size_t bytes, MsgBufferBase* buffer)
@@ -151,7 +151,7 @@ void AsioSocket::OnWrite(system::error_code err, std::size_t bytes, MsgBufferBas
 	}
 	if (m_write_function)
 	{
-		m_write_function(this, err);
+		m_write_function(shared_from_this(), err);
 	}
 	buffer->Recycle();
 }
@@ -160,7 +160,7 @@ void AsioSocket::OnConnect(system::error_code err)
 {
 	if (m_connect_function)
 	{
-		m_connect_function(this, err);
+		m_connect_function(shared_from_this(), err);
 	}
 }
 
@@ -233,17 +233,17 @@ eMSG_BUFFER_LENGTH::e AsioSocket::GetMsgBufferLen(size_t msg_len)
 	return eMSG_BUFFER_LENGTH::BYTES_MAX;
 }
 
-void AsioSocket::RegisterReadFunc(std::function<void(AsioSocket*, system::error_code, std::size_t, MsgBufferBase*)> read_func)
+void AsioSocket::RegisterReadFunc(std::function<void(std::shared_ptr<AsioSocket>, system::error_code, std::size_t, MsgBufferBase*)> read_func)
 {
 	m_read_function = read_func;
 }
 
-void AsioSocket::RegisterWriteFunc(std::function<void(AsioSocket*, system::error_code)> write_func)
+void AsioSocket::RegisterWriteFunc(std::function<void(std::shared_ptr<AsioSocket>, system::error_code)> write_func)
 {
 	m_write_function = write_func;
 }
 
-void AsioSocket::RegisterConnectfunc(std::function<void(AsioSocket*, system::error_code)> connect_func)
+void AsioSocket::RegisterConnectfunc(std::function<void(std::shared_ptr<AsioSocket>, system::error_code)> connect_func)
 {
 	m_connect_function = connect_func;
 }

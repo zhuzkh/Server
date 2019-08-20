@@ -4,10 +4,11 @@
 #include "NetProxy.h"
 #include "Logger.h"
 #include "MemoryPool.h"
+#include <memory>
 using namespace boost::asio;
 using namespace boost::asio::error;
 using namespace boost;
-class AsioSocket
+class AsioSocket : public std::enable_shared_from_this<AsioSocket>
 {
 public:
 	AsioSocket(int id, ip::tcp::socket socket); 
@@ -19,9 +20,9 @@ public:
 	void AsyncReadBody(MsgBufferBase* buffer, size_t body_length);
 	void AsyncWrite(std::string str);
 	void AsyncWrite(char* buff, size_t size);
-	void RegisterReadFunc(std::function<void(AsioSocket*, system::error_code, std::size_t, MsgBufferBase*)> read_func);
-	void RegisterWriteFunc(std::function<void(AsioSocket*, system::error_code)> write_func);
-	void RegisterConnectfunc(std::function<void(AsioSocket*, system::error_code)> connect_func);
+	void RegisterReadFunc(std::function<void(std::shared_ptr<AsioSocket>, system::error_code, std::size_t, MsgBufferBase*)> read_func);
+	void RegisterWriteFunc(std::function<void(std::shared_ptr<AsioSocket>, system::error_code)> write_func);
+	void RegisterConnectfunc(std::function<void(std::shared_ptr<AsioSocket>, system::error_code)> connect_func);
 	ip::tcp::socket& GetSocket();
 	const ip::tcp::endpoint GetEndPoint();
 	int GetId();
@@ -38,9 +39,9 @@ private:
 	ip::tcp::socket m_socket;
 	int m_id;
 	MsgHeader m_header_buffer;
-	std::function<void(AsioSocket*, system::error_code, std::size_t, MsgBufferBase*)> m_read_function;
-	std::function<void(AsioSocket*, system::error_code)> m_write_function;
-	std::function<void(AsioSocket*, system::error_code)> m_connect_function;
+	std::function<void(std::shared_ptr<AsioSocket>, system::error_code, std::size_t, MsgBufferBase*)> m_read_function;
+	std::function<void(std::shared_ptr<AsioSocket>, system::error_code)> m_write_function;
+	std::function<void(std::shared_ptr<AsioSocket>, system::error_code)> m_connect_function;
 };
 
 #define GET_MSG_Buffer(len) MsgBuffer<len>* buffer = MemoryPool<MsgBuffer<len>>::GetInstance().GetObj();\

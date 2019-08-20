@@ -21,11 +21,11 @@ public:
 	//网络线程调用
 	void SendMsg();
 	void DoSendMsg();
-	void OnReceive(AsioSocket* socket, system::error_code err, std::size_t bytes, MsgBufferBase* buffer);
-	void OnSend(AsioSocket* socket, system::error_code err);
+	void OnReceive(std::shared_ptr<AsioSocket> socket, system::error_code err, std::size_t bytes, MsgBufferBase* buffer);
+	void OnSend(std::shared_ptr<AsioSocket> socket, system::error_code err);
 	void OnAccept(system::error_code err, ip::tcp::socket& socket);
-	void OnConnect(AsioSocket* socket, system::error_code err);	
-	void SocketClose(AsioSocket* socket);
+	void OnConnect(std::shared_ptr<AsioSocket> socket, system::error_code err);
+	void SocketClose(std::shared_ptr<AsioSocket> socket);
 	int32_t MakeSocketId();
 	//////////////////////////////////////////////////////////////////////////
 private:
@@ -35,6 +35,6 @@ private:
 	MessageCirularQueue m_send_queue;
 	MessageCirularQueue m_receive_queue;
 	
-	std::map<int32_t, AsioSocket*> m_client_socket_map;
-	std::map<int32_t, AsioSocket*> m_server_socket_map;
+	std::map<int32_t, std::shared_ptr<AsioSocket>> m_client_socket_map;
+	std::map<int32_t, std::shared_ptr<AsioSocket>> m_server_socket_map;
 };

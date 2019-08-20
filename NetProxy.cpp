@@ -75,7 +75,7 @@ void NetProxy::DoSendMsg()
 	char body[256] = { 0 };
 	memmove(&header, m_send_temp_buffer, MSG_HEADER_LEN);
 	memmove(body, m_send_temp_buffer + MSG_HEADER_LEN, header.length - MSG_HEADER_LEN);
-	std::map<int32_t, AsioSocket*>::iterator it = m_client_socket_map.find(header.player_id);
+	std::map<int32_t, std::shared_ptr<AsioSocket>>::iterator it = m_client_socket_map.find(header.player_id);
 	if (it == m_client_socket_map.end())
 	{
 		return;
@@ -87,7 +87,7 @@ void NetProxy::DoSendMsg()
 	it->second->AsyncWrite(body);
 }
 
-void NetProxy::OnReceive(AsioSocket* socket, system::error_code err, std::size_t bytes, MsgBufferBase* buffer)
+void NetProxy::OnReceive(std::shared_ptr<AsioSocket> socket, system::error_code err, std::size_t bytes, MsgBufferBase* buffer)
 {
 	if (!socket)
 	{
@@ -110,7 +110,7 @@ void NetProxy::OnReceive(AsioSocket* socket, system::error_code err, std::size_t
 	}
 }
 
-void NetProxy::OnSend(AsioSocket* socket, system::error_code err)
+void NetProxy::OnSend(std::shared_ptr<AsioSocket> socket, system::error_code err)
 {
 	if (!socket)
 	{
@@ -124,7 +124,7 @@ void NetProxy::OnSend(AsioSocket* socket, system::error_code err)
 void NetProxy::OnAccept(system::error_code err, ip::tcp::socket& socket)
 {
 	int socket_id = MakeSocketId();
-	AsioSocket* asioSocket = new AsioSocket(socket_id, std::move(socket));
+	std::shared_ptr<AsioSocket> asioSocket = std::make_shared<AsioSocket>(socket_id, std::move(socket));
 	if (!asioSocket)
 	{
 		return;
@@ -137,7 +137,7 @@ void NetProxy::OnAccept(system::error_code err, ip::tcp::socket& socket)
 	asioSocket->AsyncReadHeader();
 }
 
-void NetProxy::OnConnect(AsioSocket* pSocket, system::error_code err)
+void NetProxy::OnConnect(std::shared_ptr<AsioSocket> pSocket, system::error_code err)
 {
 	int socket_id = MakeSocketId();
 	if (err)
@@ -152,14 +152,13 @@ void NetProxy::OnConnect(AsioSocket* pSocket, system::error_code err)
 	m_server_socket_map[socket_id] = pSocket;
 }
 
-void NetProxy::SocketClose(AsioSocket* socket)
+void NetProxy::SocketClose(std::shared_ptr<AsioSocket> socket)
 {
 	socket->Close();
 	if (m_client_socket_map.find(socket->GetId()) != m_client_socket_map.end())
 	{
 		m_client_socket_map.erase(socket->GetId());
 	}
-	delete socket;
 }
 
 int32_t NetProxy::MakeSocketId()
