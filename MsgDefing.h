@@ -92,9 +92,9 @@ struct MsgHeader
 #pragma pack(pop)
 
 
-constexpr int32_t MAX_MSG_LEN = 40 * 1024;  /* c2s,s2c的最大包长度 40k*/
+constexpr int32_t MSG_MAX_LEN = 40 * 1024;  /* c2s,s2c的最大包长度 40k*/
 constexpr int32_t MSG_HEADER_LEN = sizeof(MsgHeader);
-constexpr int32_t MSG_BODY_LEN = MAX_MSG_LEN - MSG_HEADER_LEN;
+constexpr int32_t MSG_BODY_LEN = MSG_MAX_LEN - MSG_HEADER_LEN;
 
 namespace eMSG_BUFFER_LENGTH
 {
@@ -108,7 +108,7 @@ namespace eMSG_BUFFER_LENGTH
 		BYTES_1024 = 1024,
 		BYTES_2048 = 2048,
 		BYTES_4096 = 4096,
- 		BYTES_MAX = MAX_MSG_LEN,
+ 		BYTES_MAX = MSG_MAX_LEN,
 	};
 }
 
@@ -136,7 +136,6 @@ public:
 	{
 		m_func(this);
 	}
-private:
 	char m_data[size];
 	std::function<void(MsgBuffer*)> m_func;
 };

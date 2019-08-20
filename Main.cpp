@@ -91,9 +91,13 @@ int main(int argc, char* argv[])
 		LOG_INFO("acceptor start");
 		acceptor.AsyncAccept();
 	}
-
-
-	service.run();
+	while (true)
+	{
+		service.poll_one();
+		NetProxy::GetInstance().SendMsg();
+		Sleep(1);
+	}
+	//service.run();
 	
 	Release();		
 	::system("pause");

@@ -25,7 +25,14 @@ AsioSocket::AsioSocket(io_context& service) : m_socket(service), m_id(0)
 
 AsioSocket::~AsioSocket()
 {
+	Release();
+}
 
+void AsioSocket::Release()
+{
+	m_read_function = nullptr;
+	m_write_function = nullptr;
+	m_connect_function = nullptr;
 }
 
 void AsioSocket::AsyncConnect(std::string ip_address, int port)
@@ -58,7 +65,7 @@ void AsioSocket::OnReaderHeader(system::error_code err, std::size_t bytes)
 
 		return;
 	}
-	
+	m_header_buffer.player_id = m_id;
 	if (m_header_buffer.length > MSG_BODY_LEN)
 	{
 		LOG_ERROR("read msg out of size; size[{}], msg id[{}]", m_header_buffer.length, 0);
@@ -92,7 +99,7 @@ void AsioSocket::OnReadBody(system::error_code err, std::size_t bytes, MsgBuffer
 	{
 		return;
 	}
-	m_read_function(this, err, bytes + MSG_HEADER_LEN, pBuffer);
+	m_read_function(this, err, bytes, pBuffer);
 	pBuffer->Recycle();
 }
 
@@ -101,7 +108,7 @@ void AsioSocket::AsyncWrite(std::string str)
 	uint32_t str_size = str.size() + MSG_HEADER_LEN;
 	MsgHeader header = { 0 };
 	header.length = (uint16_t)str_size;
-	if (str_size > MAX_MSG_LEN)
+	if (str_size > MSG_MAX_LEN)
 	{
 		LOG_ERROR("string out of size; size[{}], msg id[{}]", str_size, header.msg_id);
 		return;
@@ -121,7 +128,7 @@ void AsioSocket::AsyncWrite(char* str, size_t size)
 	uint32_t str_size = size + MSG_HEADER_LEN;	
 	MsgHeader header = { 0 };
 	header.length = (uint16_t)str_size;
-	if (str_size > MAX_MSG_LEN)
+	if (str_size > MSG_MAX_LEN)
 	{
 		LOG_ERROR("write msg out of size; size[{}], msg id[{}]", str_size, header.msg_id);
 		return;
@@ -259,6 +266,8 @@ int AsioSocket::GetId()
 bool AsioSocket::Close()
 {
 	system::error_code err;
-	m_socket.close(err);
+	//m_socket.close(err);
+	m_socket.shutdown(socket_base::shutdown_both, err);
+	Release();
 	return true;
 }

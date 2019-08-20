@@ -17,18 +17,20 @@ public:
 	void Update();
 	void OnProcessMsg();
 	void ReceiveMsg();
-	void SendMsg();
 	//////////////////////////////////////////////////////////////////////////
 	//网络线程调用
+	void SendMsg();
+	void DoSendMsg();
 	void OnReceive(AsioSocket* socket, system::error_code err, std::size_t bytes, MsgBufferBase* buffer);
-	void OnSend(AsioSocket* socket, system::error_code err, std::size_t bytes);
+	void OnSend(AsioSocket* socket, system::error_code err);
 	void OnAccept(system::error_code err, ip::tcp::socket& socket);
 	void OnConnect(AsioSocket* socket, system::error_code err);	
+	void SocketClose(AsioSocket* socket);
 	int32_t MakeSocketId();
 	//////////////////////////////////////////////////////////////////////////
 private:
-	char m_send_temp_buf[MAX_MSG_LEN];
-	char m_recive_temp_buf[MAX_MSG_LEN];
+	char m_send_temp_buffer[MSG_MAX_LEN];
+	char m_recive_temp_buffer[MSG_MAX_LEN];
 
 	MessageCirularQueue m_send_queue;
 	MessageCirularQueue m_receive_queue;

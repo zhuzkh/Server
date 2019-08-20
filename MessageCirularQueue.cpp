@@ -105,7 +105,7 @@ bool MessageCirularQueue::Append(const char* pMsg, size_t iMsgLength, uint32_t s
 
 bool MessageCirularQueue::Pop(char* pMsg, size_t& iMsgLength)
 {
-	size_t iUsedSize = _getUsedSize ();
+	size_t iUsedSize = _getUsedSize();
 	// 都不足以组成一个包
 	if (Min_Message_Chunk_Size > iUsedSize)
 	{

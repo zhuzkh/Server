@@ -13,7 +13,7 @@ public:
 	AsioSocket(int id, ip::tcp::socket socket); 
 	AsioSocket(io_context& service);
 	~AsioSocket();
-
+	void Release();
 	void AsyncConnect(std::string ip_address, int port);
 	void AsyncReadHeader();
 	void AsyncReadBody(MsgBufferBase* buffer, size_t body_length);
@@ -41,7 +41,6 @@ private:
 	std::function<void(AsioSocket*, system::error_code, std::size_t, MsgBufferBase*)> m_read_function;
 	std::function<void(AsioSocket*, system::error_code)> m_write_function;
 	std::function<void(AsioSocket*, system::error_code)> m_connect_function;
-	std::vector<eMSG_BUFFER_LENGTH::e> m_msg_len_vec;
 };
 
 #define GET_MSG_Buffer(len) MsgBuffer<len>* buffer = MemoryPool<MsgBuffer<len>>::GetInstance().GetObj();\
