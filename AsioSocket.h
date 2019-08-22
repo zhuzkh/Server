@@ -11,10 +11,11 @@ using namespace boost;
 class AsioSocket : public std::enable_shared_from_this<AsioSocket>
 {
 public:
+	AsioSocket();
 	AsioSocket(int id, ip::tcp::socket socket); 
 	AsioSocket(io_context& service);
 	~AsioSocket();
-	void Release();
+	void Clear();
 	void AsyncConnect(std::string ip_address, int port);
 	void AsyncReadHeader();
 	void AsyncReadBody(MsgBufferBase* buffer, size_t body_length);

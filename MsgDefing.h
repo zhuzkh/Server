@@ -120,6 +120,7 @@ public:
 
 	}
 	virtual void Recycle() = 0;
+	virtual size_t GetSize() = 0;
 	char* p_data;
 };
 
@@ -135,6 +136,10 @@ public:
 	void Recycle()
 	{
 		m_func(this);
+	}
+	size_t GetSize()
+	{
+		return sizeof(m_data);
 	}
 	char m_data[size];
 	std::function<void(MsgBuffer*)> m_func;

@@ -19,7 +19,7 @@ void NetProxy::Update()
 	while (true)
 	{
 		ReceiveMsg();
-		Sleep(10);
+		Sleep(1);
 	}
 }
 

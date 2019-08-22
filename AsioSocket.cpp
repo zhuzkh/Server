@@ -12,27 +12,27 @@ std::vector<eMSG_BUFFER_LENGTH::e> MSG_LENGTH_VEC = {
 };
 
 
-
 AsioSocket::AsioSocket(int id, ip::tcp::socket socket) : m_socket(std::move(socket)), m_id(id)
 {
-	memset(&m_header_buffer, 0, MSG_HEADER_LEN);
+	Clear();
 }
 
 AsioSocket::AsioSocket(io_context& service) : m_socket(service), m_id(0)
 {
-	memset(&m_header_buffer, 0, MSG_HEADER_LEN);
+	Clear();
 }
 
 AsioSocket::~AsioSocket()
 {
-	Release();
+	Clear();
 }
 
-void AsioSocket::Release()
+void AsioSocket::Clear()
 {
 	m_read_function = nullptr;
 	m_write_function = nullptr;
 	m_connect_function = nullptr;
+	memset(&m_header_buffer, 0, MSG_HEADER_LEN);
 }
 
 void AsioSocket::AsyncConnect(std::string ip_address, int port)
@@ -118,6 +118,7 @@ void AsioSocket::AsyncWrite(std::string str)
 	{
 		return;
 	}
+
 	memmove(buffer->p_data, &header, MSG_HEADER_LEN);
 	memmove(buffer->p_data + MSG_HEADER_LEN, str.c_str(), str.size());
 	async_write(m_socket, boost::asio::buffer(buffer->p_data, header.length), transfer_all(), std::bind(&AsioSocket::OnWrite, shared_from_this(), std::placeholders::_1, std::placeholders::_2, buffer));
@@ -167,6 +168,11 @@ void AsioSocket::OnConnect(system::error_code err)
 MsgBufferBase* AsioSocket::GetMsgBuffer(size_t msg_len)
 {
 	eMSG_BUFFER_LENGTH::e buffer_len = GetMsgBufferLen(msg_len);
+	if ((size_t)buffer_len < msg_len)
+	{
+		LOG_ERROR("size err! buffer_size[{}], msg_size[{}]", (size_t)buffer_len, msg_len);
+		return nullptr;
+	}
 	switch (buffer_len)
 	{
 	case eMSG_BUFFER_LENGTH::BYTES_32:
@@ -268,6 +274,6 @@ bool AsioSocket::Close()
 	system::error_code err;
 	//m_socket.close(err);
 	m_socket.shutdown(socket_base::shutdown_both, err);
-	Release();
+	Clear();
 	return true;
 }

@@ -1,4 +1,3 @@
-#pragma once
 #include "MemoryPoolManager.h"
 #include "MemoryPool.h"
 MemoryPoolMgr::MemoryPoolMgr()
