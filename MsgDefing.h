@@ -112,7 +112,7 @@ namespace eMSG_BUFFER_LENGTH
 	};
 }
 
-class MsgBufferBase
+class MsgBufferBase 
 {
 public:
 	MsgBufferBase() : p_data(nullptr)
@@ -125,7 +125,7 @@ public:
 };
 
 template<size_t size>
-class MsgBuffer : public MsgBufferBase
+class MsgBuffer : public MsgBufferBase, public OneWayListNode<MsgBuffer<size>>
 {
 public:
 	MsgBuffer()

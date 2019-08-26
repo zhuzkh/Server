@@ -5,7 +5,17 @@
 #include "Singleton.h"
 #include <vector>
 #include "MemoryPoolManager.h"
+#include <queue>
 const int32_t DEFAULT_POOL_SIZE = 1000;
+
+template <typename T>
+class OneWayListNode
+{
+public:
+	OneWayListNode() : next_node(nullptr)
+	{}
+	T* next_node;
+};
 
 class MemoryPoolBase
 {
@@ -26,9 +36,9 @@ class MemoryPool : public Singleton<MemoryPool<T>>, public MemoryPoolBase
 {
 private:
 	friend Singleton<MemoryPool>;
-	MemoryPool() : m_max_size(0)
+	MemoryPool() : m_max_size(0), m_header(nullptr), m_tail(nullptr)
 	{
-		for (uint32_t i = 0; i != DEFAULT_POOL_SIZE; ++i)
+		for (; m_max_size < DEFAULT_POOL_SIZE; ++m_max_size)
 		{
 			addObj();
 		}
@@ -40,7 +50,7 @@ private:
 public:
 	T* GetObj()
 	{
-		if (m_object_list.empty())
+		if (m_header == nullptr)
 		{
 			T* obj = new T();
 			if (!obj)
@@ -51,20 +61,40 @@ public:
 			++m_max_size;
 			return obj;
 		}
-
-		T* obj = m_object_list.back();
-		m_object_list.pop_back();
+		T* obj = m_header;
+		m_header = m_header->next_node;
+		if (m_header == nullptr)
+		{
+			m_tail = nullptr;
+		}
+		obj->next_node = nullptr;
 		return obj;
+	}
+
+	void Push(T* obj)
+	{
+		if (m_header == nullptr)
+		{
+			m_header = obj;
+			m_header->next_node = nullptr;
+			m_tail = m_header;
+		}
+		else
+		{
+			obj->next_node = nullptr;
+			m_tail->next_node = obj;
+			m_tail = m_tail->next_node;
+		}
 	}
 
 	void Resize(uint32_t size)
 	{
-		if (m_max_size <= size)
+		if (m_max_size >= size)
 		{
 			return;
 		}
 
-		for (uint32_t i = m_max_size; i <= size; ++i)
+		for (; m_max_size < size; ++m_max_size)
 		{
 			addObj();
 		}
@@ -76,44 +106,46 @@ public:
 		{
 			return;
 		}
-		m_object_list.push_back(obj);
+		Push(obj);
 	}
 
 	void Release()
 	{
-		if (m_object_list.size() != m_max_size)
+		int32_t size = 0;
+		while (m_header)
 		{
-			LOG_WARN("obj has not recycle completely! max size[{}],recycle size[{}]", m_max_size, m_object_list.size());
+			T* tmp = m_header;
+			m_header = m_header->next_node;
+			delete tmp;
+			++size;
 		}
-		for (auto& data : m_object_list)
+		m_tail = nullptr;
+		if (size != m_max_size)
 		{
-			delete data;
-			data = nullptr;
+			LOG_WARN("obj has not recycle completely! max size[{}],recycle size[{}]", m_max_size, size);
 		}
-		m_object_list.clear();
 	}
 private:
 	void addObj()
 	{
-		T* pObj = new T();
-		if (!pObj)
+		T* obj = new T();
+		if (!obj)
 		{
 			LOG_ERROR("create memory obj failed! {}");
 			return;
 		}
-		m_object_list.push_back(pObj);
-		++m_max_size;
+		Push(obj);
 	}
 
 private:
-	std::list<T*>	m_object_list;
 	uint32_t		m_max_size;
-	std::mutex		m_mutex;
+	T*				m_header;
+	T*				m_tail;
 };
 
 
 #define GET_MEMORY_PTR(T) MemoryPool<T>::GetInstance().GetObj();
-#define RECYCLE_MEMORY_PTR(T) MemoryPool<T>::GetInstance().Recycle(this);
+#define RECYCLE_MEMORY_PTR(T, ptr) MemoryPool<T>::GetInstance().Recycle(ptr);
 // class MemoryObjBase
 // {
 // public:

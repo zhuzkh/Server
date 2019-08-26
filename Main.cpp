@@ -12,12 +12,14 @@
 #include <string>
 #include "TimerManager.h"
 #include "MemoryPoolManager.h"
+#include "SharedPtrMemoryPool.h"
+#include <memory>
 void Func(int a, std::string b)
 {
 	std::cout << a << '\t' << b << std::endl;
 }
 
-class Test
+class Test : public OneWayListNode<Test>
 {
 public:
 	Test()
@@ -27,6 +29,10 @@ public:
 	void Func(int a, int b)
 	{
 		LOG_DEBUG("time_stamp : {}; id : {}", a, b);
+	}
+	void Clear()
+	{
+
 	}
 	int m_test;
 };
@@ -67,6 +73,32 @@ void Update()
 int main(int argc, char* argv[])
 {
 	Logger::GetInstance().Initlize("logger", "..\\log\\test.log");
+
+	std::list<Test*> test_list;
+	test_list.push_back(new Test());
+	std::vector<Test*> vec;
+	vec.push_back(new Test());
+	MemoryPool<Test>::GetInstance().Resize(100000);
+	Test* test_array[100000];
+	TIME_DEBUG_START
+	for (size_t i = 0; i != 100000; ++i)
+	{
+//		std::unique_ptr<Test> tmp = std::make_unique<Test>();
+//		test_list.back();
+//		Test* tmp = *test_list.begin();
+//		std::shared_ptr<Test> tmp = std::make_shared<Test>();
+//		std::shared_ptr<Test> tmp = GET_SHARED_PTR(Test);
+		test_array[i] = GET_MEMORY_PTR(Test);
+		//test_array[i] = new Test();
+	}
+	for (size_t i = 0; i != 100000; ++i)
+	{
+		RECYCLE_MEMORY_PTR(Test, test_array[i]);
+
+//		delete test_array[i];
+	}
+	TIME_DEBUG_CUR
+	MemoryPool<Test>::GetInstance().Release();
 // 	MemoryObj<MsgData>* obj = MemoryPool<MsgData>::GetInstance().GetObj();
 // 	obj->Recycle();
 	//TIME_DEBUG_START

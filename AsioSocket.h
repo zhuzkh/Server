@@ -11,7 +11,6 @@ using namespace boost;
 class AsioSocket : public std::enable_shared_from_this<AsioSocket>
 {
 public:
-	AsioSocket();
 	AsioSocket(int id, ip::tcp::socket socket); 
 	AsioSocket(io_context& service);
 	~AsioSocket();

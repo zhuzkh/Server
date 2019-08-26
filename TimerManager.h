@@ -42,7 +42,7 @@ public:
 };
 
 template <typename ...Args>
-class TimerNodeImpl : public TimerNode
+class TimerNodeImpl : public TimerNode, public OneWayListNode<TimerNodeImpl<Args...>>
 {
 public:
 	void CallBack()
@@ -51,7 +51,7 @@ public:
 	}
 	void Recycle()
 	{
-		RECYCLE_MEMORY_PTR(TimerNodeImpl<Args...>);
+		RECYCLE_MEMORY_PTR(TimerNodeImpl<Args...>, this);
 		//MemoryPool<TimerNodeImpl<Args...>>::GetInstance().Recycle(this);
 	}
 	std::function<void(Args...)> func;
