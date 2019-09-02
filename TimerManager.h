@@ -42,7 +42,7 @@ public:
 };
 
 template <typename ...Args>
-class TimerNodeImpl : public TimerNode, public OneWayListNode<TimerNodeImpl<Args...>>
+class TimerNodeImpl : public TimerNode
 {
 public:
 	void CallBack()

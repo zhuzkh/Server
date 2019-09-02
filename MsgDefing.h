@@ -125,7 +125,7 @@ public:
 };
 
 template<size_t size>
-class MsgBuffer : public MsgBufferBase, public OneWayListNode<MsgBuffer<size>>
+class MsgBuffer : public MsgBufferBase
 {
 public:
 	MsgBuffer()

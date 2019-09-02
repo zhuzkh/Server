@@ -8,14 +8,6 @@
 #include <queue>
 const int32_t DEFAULT_POOL_SIZE = 1000;
 
-template <typename T>
-class OneWayListNode
-{
-public:
-	OneWayListNode() : next_node(nullptr)
-	{}
-	T* next_node;
-};
 
 class MemoryPoolBase
 {
@@ -40,7 +32,7 @@ private:
 	{
 		for (; m_max_size < DEFAULT_POOL_SIZE; ++m_max_size)
 		{
-			addObj();
+			CreateObj();
 		}
 	}
 
@@ -52,40 +44,25 @@ public:
 	{
 		if (m_header == nullptr)
 		{
-			T* obj = new T();
+			ListNode* obj = new ListNode();
 			if (!obj)
 			{
 				LOG_ERROR("create memory obj failed!");
 				return nullptr;
 			}
 			++m_max_size;
-			return obj;
+			return reinterpret_cast<T*>(obj);
 		}
-		T* obj = m_header;
+		ListNode* obj = m_header;
 		m_header = m_header->next_node;
 		if (m_header == nullptr)
 		{
 			m_tail = nullptr;
 		}
 		obj->next_node = nullptr;
-		return obj;
+		return reinterpret_cast<T*>(obj);
 	}
 
-	void Push(T* obj)
-	{
-		if (m_header == nullptr)
-		{
-			m_header = obj;
-			m_header->next_node = nullptr;
-			m_tail = m_header;
-		}
-		else
-		{
-			obj->next_node = nullptr;
-			m_tail->next_node = obj;
-			m_tail = m_tail->next_node;
-		}
-	}
 
 	void Resize(uint32_t size)
 	{
@@ -96,17 +73,17 @@ public:
 
 		for (; m_max_size < size; ++m_max_size)
 		{
-			addObj();
+			CreateObj();
 		}
 	}
 
-	void Recycle(T* obj)
+	void Recycle(void* obj)
 	{
 		if (!obj)
 		{
 			return;
 		}
-		Push(obj);
+		PushBack(obj);
 	}
 
 	void Release()
@@ -114,7 +91,7 @@ public:
 		int32_t size = 0;
 		while (m_header)
 		{
-			T* tmp = m_header;
+			ListNode* tmp = m_header;
 			m_header = m_header->next_node;
 			delete tmp;
 			++size;
@@ -126,26 +103,53 @@ public:
 		}
 	}
 private:
-	void addObj()
+	class ListNode
 	{
-		T* obj = new T();
+	public:
+		ListNode() : next_node(nullptr)
+		{}
+		T data;
+		ListNode* next_node;
+	};
+
+	void CreateObj()
+	{
+		ListNode* obj = new ListNode();
 		if (!obj)
 		{
 			LOG_ERROR("create memory obj failed! {}");
 			return;
 		}
-		Push(obj);
+		PushBack(obj);
+	}
+	void PushBack(void* obj)
+	{
+		ListNode* node = reinterpret_cast<ListNode*>(obj);
+		if (m_header == nullptr)
+		{
+			m_header = node;
+			m_header->next_node = nullptr;
+			m_tail = m_header;
+		}
+		else
+		{
+			node->next_node = nullptr;
+			m_tail->next_node = node;
+			m_tail = m_tail->next_node;
+		}
 	}
 
 private:
-	uint32_t		m_max_size;
-	T*				m_header;
-	T*				m_tail;
+	uint32_t	m_max_size;
+	ListNode*	m_header;
+	ListNode*	m_tail;
 };
 
 
 #define GET_MEMORY_PTR(T) MemoryPool<T>::GetInstance().GetObj();
 #define RECYCLE_MEMORY_PTR(T, ptr) MemoryPool<T>::GetInstance().Recycle(ptr);
+#define RELEASE_MEMORY_POOL(T) MemoryPool<T>::GetInstance().Release();
+
 // class MemoryObjBase
 // {
 // public:

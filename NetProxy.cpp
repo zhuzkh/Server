@@ -129,7 +129,8 @@ void NetProxy::OnAccept(system::error_code err, ip::tcp::socket& socket)
 	{
 		return;
 	}
-	asioSocket->RegisterReadFunc(std::bind(&NetProxy::OnReceive, &NetProxy::GetInstance(), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+	asioSocket->REGISTER_READ_FUNC(&NetProxy::OnReceive, &NetProxy::GetInstance());
+	//asioSocket->RegisterReadFunc(std::bind(&NetProxy::OnReceive, &NetProxy::GetInstance(), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
 //   	asioSocket->RegisterWriteFunc(std::bind(&NetProxy::OnSend, &NetProxy::GetInstance(), std::placeholders::_1, std::placeholders::_2));
 
 	m_client_socket_map[socket_id] = asioSocket;

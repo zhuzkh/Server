@@ -27,6 +27,9 @@ public:
 	const ip::tcp::endpoint GetEndPoint();
 	int GetId();
 	bool Close();
+#define REGISTER_READ_FUNC(func, instance) RegisterReadFunc(std::bind(func, instance, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+#define REGISTER_WRITE_FUNC(func, instance) RegisterWriteFunc(std::bind(func, instance, std::placeholders::_1, std::placeholders::_2));
+#define REGISTER_CONNECT_FUNC(func, instance) RegisterConnectfunc(std::bind(func, instance, std::placeholders::_1, std::placeholders::_2));
 private:
 	void OnReaderHeader(system::error_code err, std::size_t bytes);
 	void OnReadBody(system::error_code err, std::size_t bytes, MsgBufferBase* buffer);
