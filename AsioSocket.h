@@ -31,17 +31,15 @@ public:
 #define REGISTER_WRITE_FUNC(func, instance) RegisterWriteFunc(std::bind(func, instance, std::placeholders::_1, std::placeholders::_2));
 #define REGISTER_CONNECT_FUNC(func, instance) RegisterConnectfunc(std::bind(func, instance, std::placeholders::_1, std::placeholders::_2));
 private:
-	void OnReaderHeader(system::error_code err, std::size_t bytes);
+	void OnReaderHeader(system::error_code err, std::size_t bytes, MsgHeader* header_buffer);
 	void OnReadBody(system::error_code err, std::size_t bytes, MsgBufferBase* buffer);
 	void OnWrite(system::error_code err, std::size_t bytes, MsgBufferBase* buffer);
 	void OnConnect(system::error_code err);
-
 	MsgBufferBase* GetMsgBuffer(size_t msg_len);
 	eMSG_BUFFER_LENGTH::e GetMsgBufferLen(size_t msg_len);
 private:
 	ip::tcp::socket m_socket;
 	int m_id;
-	MsgHeader m_header_buffer;
 	std::function<void(std::shared_ptr<AsioSocket>, system::error_code, std::size_t, MsgBufferBase*)> m_read_function;
 	std::function<void(std::shared_ptr<AsioSocket>, system::error_code)> m_write_function;
 	std::function<void(std::shared_ptr<AsioSocket>, system::error_code)> m_connect_function;

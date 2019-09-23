@@ -32,7 +32,6 @@ void AsioSocket::Clear()
 	m_read_function = nullptr;
 	m_write_function = nullptr;
 	m_connect_function = nullptr;
-	memset(&m_header_buffer, 0, MSG_HEADER_LEN);
 }
 
 void AsioSocket::AsyncConnect(std::string ip_address, int port)
@@ -42,11 +41,16 @@ void AsioSocket::AsyncConnect(std::string ip_address, int port)
 
 void AsioSocket::AsyncReadHeader()
 {
-	memset(&m_header_buffer, 0, MSG_HEADER_LEN);
-	async_read(m_socket, boost::asio::buffer(&m_header_buffer, MSG_HEADER_LEN), transfer_all(), std::bind(&AsioSocket::OnReaderHeader, this, std::placeholders::_1, std::placeholders::_2));
+	MsgHeader* header_buffer = MemoryPool<MsgHeader>::GetInstance().GetObj();
+	if (!header_buffer)
+	{
+		return;
+	}
+	memset(header_buffer, 0, MSG_HEADER_LEN);
+	async_read(m_socket, boost::asio::buffer(header_buffer, MSG_HEADER_LEN), transfer_all(), std::bind(&AsioSocket::OnReaderHeader, this, std::placeholders::_1, std::placeholders::_2, header_buffer));
 }
 
-void AsioSocket::OnReaderHeader(system::error_code err, std::size_t bytes)
+void AsioSocket::OnReaderHeader(system::error_code err, std::size_t bytes, MsgHeader* header_buffer)
 {
 	if (err)
 	{
@@ -65,19 +69,20 @@ void AsioSocket::OnReaderHeader(system::error_code err, std::size_t bytes)
 
 		return;
 	}
-	m_header_buffer.player_id = m_id;
-	if (m_header_buffer.length > MSG_BODY_LEN)
+	header_buffer->player_id = m_id;
+	if (header_buffer->length > MSG_BODY_LEN)
 	{
-		LOG_ERROR("read msg out of size; size[{}], msg id[{}]", m_header_buffer.length, 0);
+		LOG_ERROR("read msg out of size; size[{}], msg id[{}]", header_buffer->length, 0);
 		return;
 	}
-	MsgBufferBase* buffer = GetMsgBuffer(MSG_HEADER_LEN + m_header_buffer.length);
+	MsgBufferBase* buffer = GetMsgBuffer(MSG_HEADER_LEN + header_buffer->length);
 	if (!buffer)
 	{
 		return;
 	}
-	memmove(buffer->p_data, &m_header_buffer, MSG_HEADER_LEN);
-	AsyncReadBody(buffer, m_header_buffer.length - MSG_HEADER_LEN);
+	memmove(buffer->p_data, header_buffer, MSG_HEADER_LEN);
+	AsyncReadBody(buffer, header_buffer->length - MSG_HEADER_LEN);
+	MemoryPool<MsgHeader>::GetInstance().Recycle(header_buffer);
 }
 
 void AsioSocket::AsyncReadBody(MsgBufferBase* buffer, size_t body_length)
