@@ -100,6 +100,8 @@ void NetProxy::OnReceive(std::shared_ptr<AsioSocket> socket, system::error_code 
 		if (bytes == 0)
 		{
 			SocketClose(socket);
+			//通知逻辑线程掉线
+			//m_receive_queue.Append(buffer->p_data, bytes + MSG_HEADER_LEN);
 			return;
 		}
 	}
@@ -119,6 +121,8 @@ void NetProxy::OnSend(std::shared_ptr<AsioSocket> socket, system::error_code err
 	if (err)
 	{
 		SocketClose(socket);
+		//通知逻辑线程掉线
+		//m_receive_queue.Append(buffer->p_data, bytes + MSG_HEADER_LEN);
 	}
 }
 void NetProxy::OnAccept(system::error_code err, ip::tcp::socket& socket)

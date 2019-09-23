@@ -100,11 +100,10 @@ void AsioSocket::OnReadBody(system::error_code err, std::size_t bytes, MsgBuffer
 			AsyncReadBody(pBuffer, bytes);
 		}
 	}
-	if (!m_read_function)
+	if (m_read_function)
 	{
-		return;
+		m_read_function(shared_from_this(), err, bytes, pBuffer);
 	}
-	m_read_function(shared_from_this(), err, bytes, pBuffer);
 	pBuffer->Recycle();
 }
 
