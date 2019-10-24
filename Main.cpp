@@ -18,6 +18,7 @@ void Release()
 	TimerManager::GetInstance().Release();
 	MemoryPoolMgr::GetInstance().Release();
 }
+
 void Update()
 {
 
@@ -30,6 +31,7 @@ int main(int argc, char* argv[])
 	std::thread work_thread([]() { NetProxy::GetInstance().Update(); });
 	io_context service;
 	AsioAcceptor acceptor(service);
+
 	if (!acceptor.Initilize("127.0.0.1", 8888))
 	{
 		LOG_INFO("acceptor initilize err {}", "lalala");

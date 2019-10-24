@@ -60,7 +60,8 @@ public:
 			m_tail = nullptr;
 		}
 		obj->next_node = nullptr;
-		return reinterpret_cast<T*>(obj);
+		return &(obj->data);
+		//return reinterpret_cast<T*>(obj);
 	}
 
 
