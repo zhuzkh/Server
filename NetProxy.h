@@ -21,8 +21,9 @@ public:
 	//网络线程调用
 	void SendMsg();
 	void DoSendMsg();
-	void OnReceive(std::shared_ptr<AsioSocket> socket, system::error_code err, std::size_t bytes, MsgBufferBase* buffer);
 	void OnSend(std::shared_ptr<AsioSocket> socket, system::error_code err);
+
+	void OnReceive(std::shared_ptr<AsioSocket> socket, system::error_code err, std::size_t bytes, MsgBufferBase* buffer);
 	void OnAccept(system::error_code err, ip::tcp::socket& socket);
 	void OnConnect(std::shared_ptr<AsioSocket> socket, system::error_code err);
 	void SocketClose(std::shared_ptr<AsioSocket> socket);

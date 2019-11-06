@@ -13,15 +13,35 @@
 #include "TimerManager.h"
 #include "MemoryPoolManager.h"
 #include <memory>
+#include "StringHelper.h"
 void Release()
 {
 	TimerManager::GetInstance().Release();
 	MemoryPoolMgr::GetInstance().Release();
 }
 
-void Update()
+void ReceiveThread()
 {
 
+}
+
+void SendThread()
+{
+
+}
+
+void TimerCallBack(int i, int j)
+{
+	std::cout<<i<<std::endl;
+}
+
+
+template<typename ...Args>
+std::function<void()> make_my_closure(std::function<void(Args...)> func)
+{
+	return [=]() mutable {
+		func(Args...);
+	};
 }
 
 int main(int argc, char* argv[])
@@ -31,6 +51,9 @@ int main(int argc, char* argv[])
 	std::thread work_thread([]() { NetProxy::GetInstance().Update(); });
 	io_context service;
 	AsioAcceptor acceptor(service);
+
+	REGISTER_NORMAL_TIMER(1, std::bind(&TimerCallBack, 1, 2));
+	TimerManager::GetInstance().Tick(time(0));
 
 	if (!acceptor.Initilize("127.0.0.1", 8888))
 	{

@@ -41,20 +41,18 @@ public:
 	eTimerType::e type;
 };
 
-template <typename ...Args>
 class TimerNodeImpl : public TimerNode
 {
 public:
 	void CallBack()
 	{
-		func(0);
+		func();
 	}
 	void Recycle()
 	{
-		RECYCLE_MEMORY_PTR(TimerNodeImpl<Args...>, this);
-		//MemoryPool<TimerNodeImpl<Args...>>::GetInstance().Recycle(this);
+		RECYCLE_MEMORY_PTR(TimerNodeImpl, this);
 	}
-	std::function<void(Args...)> func;
+	std::function<void()> func;
 };
 
 
@@ -68,15 +66,14 @@ private:
 	~TimerManager();
 	friend Singleton<TimerManager>;
 public:
-	template<typename ...Args>
-	int32_t RegisterNormalTimer(int64_t owner_id, time_t time, std::function<void(Args...)> func)
+	int32_t RegisterTimer(int64_t owner_id, time_t time, std::function<void()> func)
 	{
-		TimerNodeImpl<Args...>* node = GET_MEMORY_PTR(TimerNodeImpl<Args...>);//MemoryPool<TimerNodeImpl<Args...>>::GetInstance().GetObj();
+		TimerNodeImpl* node = GET_MEMORY_PTR(TimerNodeImpl);
 		if (!node)
 		{
 			return 0;
 		}
-		node->func = func;
+ 		node->func = func;
 		int32_t timer_id = ++m_max_id;
 		node->init(owner_id, timer_id, time, eTimerType::Normal);
 		m_time_wheel.Push(node);
@@ -100,4 +97,4 @@ private:
 };
 
 //根据时间戳定时，只调用一次
-#define REGISTER_NORMAL_TIMER(time, func) TimerManager::GetInstance().RegisterNormalTimer<int>(0, time, func);
+#define REGISTER_NORMAL_TIMER(time, func) TimerManager::GetInstance().RegisterTimer(0, time, [=](){func();})
