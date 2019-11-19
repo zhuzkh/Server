@@ -66,19 +66,33 @@ private:
 	~TimerManager();
 	friend Singleton<TimerManager>;
 public:
-	int32_t RegisterTimer(int64_t owner_id, time_t time, std::function<void()> func)
+	template <typename T>
+	int32_t RegisterTimer(int64_t owner_id, time_t time, T func)
 	{
 		TimerNodeImpl* node = GET_MEMORY_PTR(TimerNodeImpl);
 		if (!node)
 		{
 			return 0;
 		}
- 		node->func = func;
+		node->func = [=] {func(); };
 		int32_t timer_id = ++m_max_id;
 		node->init(owner_id, timer_id, time, eTimerType::Normal);
 		m_time_wheel.Push(node);
 		return timer_id;
 	}
+// 	int32_t RegisterTimer(int64_t owner_id, time_t time, std::function<void()> func)
+// 	{
+// 		TimerNodeImpl* node = GET_MEMORY_PTR(TimerNodeImpl);
+// 		if (!node)
+// 		{
+// 			return 0;
+// 		}
+//  		node->func = func;
+// 		int32_t timer_id = ++m_max_id;
+// 		node->init(owner_id, timer_id, time, eTimerType::Normal);
+// 		m_time_wheel.Push(node);
+// 		return timer_id;
+// 	}
 
 	//删除计时器
 	void UnRegisterTimerBatch(int64_t owner_id);
@@ -97,4 +111,4 @@ private:
 };
 
 //根据时间戳定时，只调用一次
-#define REGISTER_NORMAL_TIMER(time, func) TimerManager::GetInstance().RegisterTimer(0, time, [=](){func();})
+#define REGISTER_NORMAL_TIMER(time, func) TimerManager::GetInstance().RegisterTimer(0, time, func)

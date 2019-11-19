@@ -6,8 +6,7 @@
 #include <vector>
 #include "MemoryPoolManager.h"
 #include <queue>
-const int32_t DEFAULT_POOL_SIZE = 1000;
-
+const int32_t DEFAULT_POOL_SIZE = 0;
 
 class MemoryPoolBase
 {
@@ -102,6 +101,7 @@ public:
 		{
 			LOG_WARN("obj has not recycle completely! max size[{}],recycle size[{}]", m_max_size, size);
 		}
+		LOG_DEBUG("total malloc size : {}", m_max_size);
 	}
 private:
 	class ListNode

@@ -37,4 +37,4 @@ private:
 #define TIME_DEBUG_CUR\
 	end_time = system_clock::now();\
 	use_time = duration_cast<milliseconds>(end_time - begin_time);\
-	LOG_INFO("cur use time : {}", use_time.count());
+ 	LOG_INFO("cur use time : {}", use_time.count());

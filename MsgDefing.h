@@ -82,10 +82,13 @@ enum ADDRESS_TYPE
 #define MAX_REDEEMKEY_STR_LENGTH	20
 #define MAX_REDEEMEXTRA_STR_LENGTH	100
 
+#define MESSAGE_CIRULAR_QUEUE_LENGTH			0x5000000
+#define MAX_HANDLE_MSG_COUNT_ONCE				512
+
 #pragma pack(push, 1)
 struct MsgHeader
 {
-	uint16_t length;
+	uint32_t length;
 	uint32_t player_id;
 	uint32_t msg_id;
 };

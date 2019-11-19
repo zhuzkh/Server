@@ -14,49 +14,11 @@ bool NetProxy::Initlize()
 	return true;
 }
 
-void NetProxy::Update()
-{
-	while (true)
-	{
-		ReceiveMsg();
-		Sleep(1);
-	}
-}
-
-void NetProxy::OnProcessMsg()
-{
-	MsgHeader header;
-	char body[256] = { 0 };
-	memmove(&header, m_recive_temp_buffer, MSG_HEADER_LEN);
-	memmove(body, m_recive_temp_buffer + MSG_HEADER_LEN, header.length - MSG_HEADER_LEN);
-	
-	m_send_queue.Append(m_recive_temp_buffer, header.length);
-// 	LOG_INFO("receive : {}", body);
-}
-
-void NetProxy::ReceiveMsg()
-{
-	bool ret;
-	size_t nCodeLength;
-	for (int i = 0; i < MAX_HANDL_MSG_COUNT_ONCE; i++)
-	{
-		nCodeLength = (size_t)MSG_MAX_LEN;
-		ret = m_receive_queue.Pop(m_recive_temp_buffer, nCodeLength);
-		if (!ret)
-			break;
-
-		if (nCodeLength <= 0)
-			break;
-
-		OnProcessMsg();
-	}
-}
-
 void NetProxy::SendMsg()
 {
 	bool ret;
 	size_t nCodeLength;
-	for (int i = 0; i < MAX_HANDL_MSG_COUNT_ONCE; i++)
+	for (int i = 0; i < MAX_HANDLE_MSG_COUNT_ONCE; i++)
 	{
 		nCodeLength = (size_t)MSG_MAX_LEN;
 		ret = m_send_queue.Pop(m_send_temp_buffer, nCodeLength);
@@ -72,9 +34,7 @@ void NetProxy::SendMsg()
 void NetProxy::DoSendMsg()
 {
 	MsgHeader header;
-	char body[256] = { 0 };
 	memmove(&header, m_send_temp_buffer, MSG_HEADER_LEN);
-	memmove(body, m_send_temp_buffer + MSG_HEADER_LEN, header.length - MSG_HEADER_LEN);
 	std::map<int32_t, std::shared_ptr<AsioSocket>>::iterator it = m_client_socket_map.find(header.player_id);
 	if (it == m_client_socket_map.end())
 	{
@@ -84,7 +44,7 @@ void NetProxy::DoSendMsg()
 	{
 		return;
 	}
-	it->second->AsyncWrite(body);
+	it->second->AsyncWrite(m_send_temp_buffer + MSG_HEADER_LEN, header.length - MSG_HEADER_LEN);
 }
 
 void NetProxy::OnReceive(std::shared_ptr<AsioSocket> socket, system::error_code err, std::size_t bytes, MsgBufferBase* buffer)
@@ -170,4 +130,14 @@ int32_t NetProxy::MakeSocketId()
 {
 	static int32_t socket_id = 0;
 	return ++socket_id;
+}
+
+MessageCirularQueue& NetProxy::GetSendQueue()
+{
+	return m_send_queue;
+}
+
+MessageCirularQueue& NetProxy::GetReceiveQueue()
+{
+	return m_receive_queue;
 }

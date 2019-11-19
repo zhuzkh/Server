@@ -1,4 +1,6 @@
 #include "AsioSocket.h"
+#include "PerfStatistics.h"
+
 std::vector<eMSG_BUFFER_LENGTH::e> MSG_LENGTH_VEC = {
 	eMSG_BUFFER_LENGTH::BYTES_32,
 	eMSG_BUFFER_LENGTH::BYTES_64,
@@ -66,22 +68,31 @@ void AsioSocket::OnReaderHeader(system::error_code err, std::size_t bytes, MsgHe
 				m_read_function(shared_from_this(), err, bytes, nullptr);
 			}
 		}
+	}
+	else
+	{
+		header_buffer->player_id = m_id;
+		if (header_buffer->length > MSG_BODY_LEN)
+		{
+			LOG_ERROR("read msg out of size; size[{}], msg id[{}]", header_buffer->length, 0);
+			return;
+		}
+		int32_t body_length = header_buffer->length - MSG_HEADER_LEN;
+		if (body_length < 0)
+		{
+			LOG_ERROR("read body msg out of size; size[{}], msg id[{}]", body_length, 0);
+			return;
+		}
+		MsgBufferBase* buffer = GetMsgBuffer(header_buffer->length);
+		if (!buffer)
+		{
+			LOG_ERROR("get msg buffer err; size[{}], msg id[{}]", header_buffer->length, 0);
+			return;
+		}
+		memmove(buffer->p_data, header_buffer, MSG_HEADER_LEN);
+		AsyncReadBody(buffer, body_length);
+	}
 
-		return;
-	}
-	header_buffer->player_id = m_id;
-	if (header_buffer->length > MSG_BODY_LEN)
-	{
-		LOG_ERROR("read msg out of size; size[{}], msg id[{}]", header_buffer->length, 0);
-		return;
-	}
-	MsgBufferBase* buffer = GetMsgBuffer(MSG_HEADER_LEN + header_buffer->length);
-	if (!buffer)
-	{
-		return;
-	}
-	memmove(buffer->p_data, header_buffer, MSG_HEADER_LEN);
-	AsyncReadBody(buffer, header_buffer->length - MSG_HEADER_LEN);
 	MemoryPool<MsgHeader>::GetInstance().Recycle(header_buffer);
 }
 
@@ -104,6 +115,7 @@ void AsioSocket::OnReadBody(system::error_code err, std::size_t bytes, MsgBuffer
 	{
 		m_read_function(shared_from_this(), err, bytes, pBuffer);
 	}
+	PerfStatistics::GetInstance().AddNetReceiveBytes(bytes + MSG_HEADER_LEN);
 	pBuffer->Recycle();
 }
 
@@ -111,7 +123,7 @@ void AsioSocket::AsyncWrite(std::string str)
 {
 	uint32_t str_size = str.size() + MSG_HEADER_LEN;
 	MsgHeader header = { 0 };
-	header.length = (uint16_t)str_size;
+	header.length = str_size;
 	if (str_size > MSG_MAX_LEN)
 	{
 		LOG_ERROR("string out of size; size[{}], msg id[{}]", str_size, header.msg_id);
@@ -126,13 +138,15 @@ void AsioSocket::AsyncWrite(std::string str)
 	memmove(buffer->p_data, &header, MSG_HEADER_LEN);
 	memmove(buffer->p_data + MSG_HEADER_LEN, str.c_str(), str.size());
 	async_write(m_socket, boost::asio::buffer(buffer->p_data, header.length), transfer_all(), std::bind(&AsioSocket::OnWrite, shared_from_this(), std::placeholders::_1, std::placeholders::_2, buffer));
+	PerfStatistics::GetInstance().AddNetSendBytes(str_size);
 }
 
 void AsioSocket::AsyncWrite(char* str, size_t size)
 {
 	uint32_t str_size = size + MSG_HEADER_LEN;	
 	MsgHeader header = { 0 };
-	header.length = (uint16_t)str_size;
+	header.length = str_size;
+	header.msg_id = 1;
 	if (str_size > MSG_MAX_LEN)
 	{
 		LOG_ERROR("write msg out of size; size[{}], msg id[{}]", str_size, header.msg_id);
@@ -146,6 +160,7 @@ void AsioSocket::AsyncWrite(char* str, size_t size)
 	memmove(buffer->p_data, &header, MSG_HEADER_LEN);
 	memmove(buffer->p_data + MSG_HEADER_LEN, str, size);
 	async_write(m_socket, boost::asio::buffer(buffer->p_data, header.length), transfer_all(), std::bind(&AsioSocket::OnWrite, shared_from_this(), std::placeholders::_1, std::placeholders::_2, buffer));
+	PerfStatistics::GetInstance().AddNetSendBytes(str_size);
 }
 
 void AsioSocket::OnWrite(system::error_code err, std::size_t bytes, MsgBufferBase* buffer)
