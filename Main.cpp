@@ -41,35 +41,8 @@ void TimerCallBack(int i, int j)
 	std::cout<<i<<std::endl;
 }
 
-void PrintPerfStatistic()
-{
-	static time_t last_time = time(0);
-	time_t now_time = time(0);
-	if (now_time - last_time >= 5)
-	{
-		LOG_INFO("receive bytes : {}", PerfStatistics::GetInstance().GetNetReceiveBytes());
-		LOG_INFO("send bytes : {}", PerfStatistics::GetInstance().GetNetSendBytes());
-		LOG_INFO("receive count : {}", PerfStatistics::GetInstance().GetNetReceiveCount());
-		LOG_INFO("send count : {}", PerfStatistics::GetInstance().GetNetSendCount());
 
-		PerfStatistics::GetInstance().Reset();
-		last_time = now_time;
-	}
-}
 const std::string system_config_path = "../config/config.json";
-
-void NetworkThreadRun(io_context& service, NetProxy& net_proxy)
-{
-	while (true)
-	{
-		service.poll_one();
-		net_proxy.SendMsg();
-
-		PrintPerfStatistic();
-
-		Sleep(1);
-	}
-}
 
 int main(int argc, char* argv[])
 {
@@ -81,7 +54,7 @@ int main(int argc, char* argv[])
 	net_proxy.Initlize();
 	LogicSystem game_logic(net_proxy.GetSendQueue(), net_proxy.GetReceiveQueue());
 
-	std::thread network_thread([&service, &net_proxy]() {NetworkThreadRun(service, net_proxy); });
+	std::thread network_thread([&net_proxy]() {net_proxy.Run(); });
 	game_logic.Run();
  	//service.run();
  	

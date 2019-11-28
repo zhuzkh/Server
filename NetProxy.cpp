@@ -1,10 +1,11 @@
 #include "NetProxy.h"
 #include "AsioSocket.h"
-
 #include "MemoryPool.h"
 #include "SystemConfig.h"
+#include "Logger.h"
+#include "PerfStatistics.h"
 
-NetProxy::NetProxy(io_context& service) : m_acceptor(service)
+NetProxy::NetProxy(io_context& service) : m_service(service), m_acceptor(service)
 {
 
 }
@@ -158,4 +159,36 @@ MessageCirularQueue& NetProxy::GetSendQueue()
 MessageCirularQueue& NetProxy::GetReceiveQueue()
 {
 	return m_receive_queue;
+}
+
+void NetProxy::Run()
+{
+	while (true)
+	{
+		Update();
+		Sleep(1);
+	}
+}
+
+void NetProxy::Update()
+{
+	m_service.poll_one();
+	SendMsg();
+	PrintPerfStatistic();
+}
+
+void NetProxy::PrintPerfStatistic()
+{
+	static time_t last_time = time(0);
+	time_t now_time = time(0);
+	if (now_time - last_time >= 5)
+	{
+		LOG_INFO("receive bytes : {}", PerfStatistics::GetInstance().GetNetReceiveBytes());
+		LOG_INFO("send bytes : {}", PerfStatistics::GetInstance().GetNetSendBytes());
+		LOG_INFO("receive count : {}", PerfStatistics::GetInstance().GetNetReceiveCount());
+		LOG_INFO("send count : {}", PerfStatistics::GetInstance().GetNetSendCount());
+
+		PerfStatistics::GetInstance().Reset();
+		last_time = now_time;
+	}
 }

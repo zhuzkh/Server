@@ -27,6 +27,12 @@ public:
 
 	MessageCirularQueue& GetSendQueue();
 	MessageCirularQueue& GetReceiveQueue();
+
+	void Run();
+private:
+	void Update();
+	void PrintPerfStatistic();
+
 private:
 	char m_send_temp_buffer[MSG_MAX_LEN];
 	char m_recive_temp_buffer[MSG_MAX_LEN];
@@ -37,5 +43,6 @@ private:
 	std::map<int32_t, std::shared_ptr<AsioSocket>> m_client_socket_map;
 	std::map<int32_t, std::shared_ptr<AsioSocket>> m_server_socket_map;
 
+	io_context& m_service;
 	AsioAcceptor m_acceptor;
 };
