@@ -1,10 +1,10 @@
 #pragma once
 #include "stdafx.h"
 #include "boost/asio.hpp"
-#include "NetProxy.h"
 #include "Logger.h"
 #include "MemoryPool.h"
 #include <memory>
+#include "MsgDefing.h"
 using namespace boost::asio;
 using namespace boost::asio::error;
 using namespace boost;

@@ -16,8 +16,10 @@
 #include "StringHelper.h"
 #include <map>
 #include <unordered_map>
-#include "MessageProcesser.h"
+#include "MessageProcessor.h"
 #include "PerfStatistics.h"
+#include "SystemConfig.h"
+#include "LogicSystem.h"
 void Release()
 {
 	TimerManager::GetInstance().Release();
@@ -54,39 +56,33 @@ void PrintPerfStatistic()
 		last_time = now_time;
 	}
 }
+const std::string system_config_path = "../config/config.json";
 
-int main(int argc, char* argv[])
+void NetworkThreadRun(io_context& service, NetProxy& net_proxy)
 {
-	Logger::GetInstance().Initlize("logger", "..\\log\\test.log");
- 	
-	NetProxy::GetInstance().Initlize();
-	MessageProcessor msg_processor(NetProxy::GetInstance().GetSendQueue(), NetProxy::GetInstance().GetReceiveQueue());
-	msg_processor.Initlize();
- 	std::thread work_thread([&msg_processor]() { msg_processor.Update(); });
- 	io_context service;
- 	AsioAcceptor acceptor(service);
-
- 	if (!acceptor.Initilize("127.0.0.1", 8888))
- 	{
- 		LOG_INFO("acceptor initilize err {}", "lalala");
- 	}
- 	else
- 	{
- 		acceptor.RegisterAcceptFunc(std::bind(&NetProxy::OnAccept, &NetProxy::GetInstance(), std::placeholders::_1, std::placeholders::_2));
- 		LOG_INFO("acceptor start");
- 		acceptor.AsyncAccept();
- 	}
-
- 	while (true)
- 	{
-		time_t now_time = time(0);
- 		service.poll_one();
- 		NetProxy::GetInstance().SendMsg();
+	while (true)
+	{
+		service.poll_one();
+		net_proxy.SendMsg();
 
 		PrintPerfStatistic();
 
- 		Sleep(1);
- 	}
+		Sleep(1);
+	}
+}
+
+int main(int argc, char* argv[])
+{
+	SystemConfig::GetInstance().Initlize(system_config_path);
+	Logger::GetInstance().Initlize("logger", SystemConfig::GetInstance().GetConf().logger.path);
+ 	
+	io_context service;
+	NetProxy net_proxy(service);
+	net_proxy.Initlize();
+	LogicSystem game_logic(net_proxy.GetSendQueue(), net_proxy.GetReceiveQueue());
+
+	std::thread network_thread([&service, &net_proxy]() {NetworkThreadRun(service, net_proxy); });
+	game_logic.Run();
  	//service.run();
  	
  	Release();		

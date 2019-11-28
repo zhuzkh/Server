@@ -1,18 +1,19 @@
 #pragma once
-#include "Singleton.h"
 #include "MessageCirularQueue.h"
 #include "MsgDefing.h"
 #include <iostream>
 #include "boost/asio.hpp"
+#include "AsioAcceptor.h"
 #include "MemoryPool.h"
 #define MESSAGE_CIRULAR_QUEUE_LENGTH			0x5000000
 #define MAX_HANDLE_MSG_COUNT_ONCE				512
 using namespace boost::asio;
 using namespace boost;
 class AsioSocket;
-class NetProxy : public Singleton<NetProxy>
+class NetProxy
 {
 public:
+	NetProxy(io_context& service);
 	bool Initlize();
 	void SendMsg();
 	void DoSendMsg();
@@ -35,4 +36,6 @@ private:
 	
 	std::map<int32_t, std::shared_ptr<AsioSocket>> m_client_socket_map;
 	std::map<int32_t, std::shared_ptr<AsioSocket>> m_server_socket_map;
+
+	AsioAcceptor m_acceptor;
 };

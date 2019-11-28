@@ -1,8 +1,26 @@
 #include "NetProxy.h"
 #include "AsioSocket.h"
+
 #include "MemoryPool.h"
+#include "SystemConfig.h"
+
+NetProxy::NetProxy(io_context& service) : m_acceptor(service)
+{
+
+}
+
 bool NetProxy::Initlize()
 {
+	int32_t port = SystemConfig::GetInstance().GetConf().network.listen_port;
+	if (!m_acceptor.Initilize("127.0.0.1", port))
+	{
+		LOG_INFO("acceptor initilize err {}", "lalala");
+		return false;
+	}
+	m_acceptor.RegisterAcceptFunc(std::bind(&NetProxy::OnAccept, this, std::placeholders::_1, std::placeholders::_2));
+	m_acceptor.AsyncAccept();
+	LOG_INFO("acceptor start");
+
 	if (!m_receive_queue.Init(MESSAGE_CIRULAR_QUEUE_LENGTH))
 	{
 		return false;
@@ -93,7 +111,7 @@ void NetProxy::OnAccept(system::error_code err, ip::tcp::socket& socket)
 	{
 		return;
 	}
-	asioSocket->REGISTER_READ_FUNC(&NetProxy::OnReceive, &NetProxy::GetInstance());
+	asioSocket->REGISTER_READ_FUNC(&NetProxy::OnReceive, this);
 	//asioSocket->RegisterReadFunc(std::bind(&NetProxy::OnReceive, &NetProxy::GetInstance(), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
 //   	asioSocket->RegisterWriteFunc(std::bind(&NetProxy::OnSend, &NetProxy::GetInstance(), std::placeholders::_1, std::placeholders::_2));
 

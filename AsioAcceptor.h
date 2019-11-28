@@ -3,7 +3,6 @@
 #include "boost/asio.hpp"
 #include "AsioSocket.h"
 #include <iostream>
-#include "NetProxy.h"
 #include "Logger.h"
 using namespace boost::asio;
 using namespace boost::system;

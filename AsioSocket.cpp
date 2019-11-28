@@ -74,6 +74,7 @@ void AsioSocket::OnReaderHeader(system::error_code err, std::size_t bytes, MsgHe
 		header_buffer->player_id = m_id;
 		if (header_buffer->length > MSG_BODY_LEN)
 		{
+			//todo, read err 是否需要关闭连接
 			LOG_ERROR("read msg out of size; size[{}], msg id[{}]", header_buffer->length, 0);
 			return;
 		}

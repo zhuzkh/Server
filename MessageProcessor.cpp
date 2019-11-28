@@ -1,4 +1,4 @@
-#include "MessageProcesser.h"
+#include "MessageProcessor.h"
 
 MessageProcessor::MessageProcessor(MessageCirularQueue& send_queue, MessageCirularQueue& receive_queue) : 
 	m_send_queue(send_queue),
@@ -16,11 +16,7 @@ bool MessageProcessor::Initlize()
 
 void MessageProcessor::Update()
 {
-	while (true)
-	{
-		ReceiveMsg();
-		Sleep(1);
-	}
+	ReceiveMsg();
 }
 
 void MessageProcessor::OnProcessMsg()
