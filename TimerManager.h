@@ -20,7 +20,11 @@ namespace eTimerType
 class TimerNode : public ListNode<TimerNode>
 {
 public:
-	void init(int64_t owner_id, int32_t id, time_t time, eTimerType::e type)
+	TimerNode()
+	{
+		Clear();
+	}
+	void Init(int64_t owner_id, int32_t id, time_t time, eTimerType::e type)
 	{
 		this->owner_id = owner_id;
 		this->id = id;
@@ -32,6 +36,7 @@ public:
 		id = 0;
 		time_stamp = 0;
 		type = eTimerType::Unknow;
+		owner_id = 0;
 	}
 	virtual void CallBack() = 0;
 	virtual void Recycle() = 0;
@@ -76,7 +81,7 @@ public:
 		}
 		node->func = [=] {func(); };
 		int32_t timer_id = ++m_max_id;
-		node->init(owner_id, timer_id, time, eTimerType::Normal);
+		node->Init(owner_id, timer_id, time, eTimerType::Normal);
 		m_time_wheel.Push(node);
 		return timer_id;
 	}

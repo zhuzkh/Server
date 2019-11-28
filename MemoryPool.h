@@ -6,7 +6,7 @@
 #include <vector>
 #include "MemoryPoolManager.h"
 #include <queue>
-const int32_t DEFAULT_POOL_SIZE = 0;
+const int32_t DEFAULT_POOL_SIZE = 100;
 
 class MemoryPoolBase
 {

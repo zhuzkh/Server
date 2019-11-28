@@ -95,7 +95,7 @@ struct MsgHeader
 #pragma pack(pop)
 
 
-constexpr int32_t MSG_MAX_LEN = 40 * 1024;  /* c2s,s2c的最大包长度 40k*/
+constexpr int32_t MSG_MAX_LEN = 64 * 1024 - 1;  /* c2s,s2c的最大包长度 64k*/
 constexpr int32_t MSG_HEADER_LEN = sizeof(MsgHeader);
 constexpr int32_t MSG_BODY_LEN = MSG_MAX_LEN - MSG_HEADER_LEN;
 

@@ -41,7 +41,6 @@ void TimerCallBack(int i, int j)
 	std::cout<<i<<std::endl;
 }
 
-
 const std::string system_config_path = "../config/config.json";
 
 int main(int argc, char* argv[])
@@ -50,15 +49,17 @@ int main(int argc, char* argv[])
 	Logger::GetInstance().Initlize("logger", SystemConfig::GetInstance().GetConf().logger.path);
  	
 	io_context service;
-	NetProxy net_proxy(service);
-	net_proxy.Initlize();
-	LogicSystem game_logic(net_proxy.GetSendQueue(), net_proxy.GetReceiveQueue());
+ 	NetProxy* net_proxy = new NetProxy(service);
+ 	net_proxy->Initlize();
+ 	LogicSystem* game_logic = new LogicSystem(net_proxy->GetSendQueue(), net_proxy->GetReceiveQueue());
 
-	std::thread network_thread([&net_proxy]() {net_proxy.Run(); });
-	game_logic.Run();
+ 	std::thread network_thread([&net_proxy]() {net_proxy->Run(); });
+ 	game_logic->Run();
  	//service.run();
  	
- 	Release();		
+ 	Release();	
+ 	delete net_proxy;
+	delete game_logic;
  	::system("pause");
 	return 1;
 }
