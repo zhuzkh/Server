@@ -20,28 +20,14 @@
 #include "PerfStatistics.h"
 #include "SystemConfig.h"
 #include "LogicSystem.h"
+
+const std::string system_config_path = "../config/config.json";
+
 void Release()
 {
 	TimerManager::GetInstance().Release();
 	MemoryPoolMgr::GetInstance().Release();
 }
-
-void ReceiveThread()
-{
-
-}
-
-void SendThread()
-{
-
-}
-
-void TimerCallBack(int i, int j)
-{
-	std::cout<<i<<std::endl;
-}
-
-const std::string system_config_path = "../config/config.json";
 
 int main(int argc, char* argv[])
 {
@@ -53,8 +39,8 @@ int main(int argc, char* argv[])
  	net_proxy->Initlize();
  	LogicSystem* game_logic = new LogicSystem(net_proxy->GetSendQueue(), net_proxy->GetReceiveQueue());
 
- 	std::thread network_thread([&net_proxy]() {net_proxy->Run(); });
- 	game_logic->Run();
+  	std::thread network_thread([&net_proxy]() {net_proxy->Run(); });
+  	game_logic->Run();
  	//service.run();
  	
  	Release();	

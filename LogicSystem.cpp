@@ -17,7 +17,11 @@ void LogicSystem::Run()
 	while (true)
 	{
 		Update();
+#ifdef WIN32
 		Sleep(1);
+#else
+		usleep(500);
+#endif	
 	}
 }
 
