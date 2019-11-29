@@ -1,6 +1,5 @@
 #include "LogicSystem.h"
-#include <synchapi.h>
-
+#include "TimeHelper.h"
 LogicSystem::LogicSystem(MessageCirularQueue& send_queue, MessageCirularQueue& receive_queue) : 
 	m_msg_processor(send_queue, receive_queue)
 {
@@ -21,7 +20,7 @@ void LogicSystem::Run()
 		Sleep(1);
 #else
 		usleep(500);
-#endif	
+#endif // WIN32
 	}
 }
 

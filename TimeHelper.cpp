@@ -52,3 +52,6 @@ time_t TimeHelper::MakeTime(int y, int mn, int d, int h, int m, int s)
 	t.tm_isdst = -1;
 	return mktime(&t);
 }
+
+
+

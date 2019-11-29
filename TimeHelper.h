@@ -4,8 +4,6 @@
 #include <chrono>
 using namespace std::chrono;
 
-
-
 class TimeHelper
 {
 public:
@@ -25,6 +23,7 @@ public:
 	static int32_t GetYearDay(time_t now_time);
 
 	static time_t MakeTime(int y, int mn, int d, int h, int m, int s);
+
 private:
 	static time_t m_cur_time;
 };

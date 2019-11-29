@@ -4,6 +4,7 @@
 #include "SystemConfig.h"
 #include "Logger.h"
 #include "PerfStatistics.h"
+#include "TimeHelper.h"
 
 NetProxy::NetProxy(io_context& service) : m_service(service), m_acceptor(service)
 {
@@ -170,7 +171,7 @@ void NetProxy::Run()
 		Sleep(1);
 #else
 		usleep(500);
-#endif
+#endif // WIN32
 	}
 }
 
@@ -196,3 +197,4 @@ void NetProxy::PrintPerfStatistic()
 		last_time = now_time;
 	}
 }
+
