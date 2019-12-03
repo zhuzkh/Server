@@ -8,7 +8,8 @@
 
 NetProxy::NetProxy(io_context& service) : m_service(service), m_acceptor(service)
 {
-
+	memset(m_send_temp_buffer, 0, MSG_MAX_LEN);
+	memset(m_recive_temp_buffer, 0, MSG_MAX_LEN);
 }
 
 bool NetProxy::Initlize()
