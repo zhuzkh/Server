@@ -14,6 +14,8 @@ public:
 	
 	static time_t GetCurTime();
 
+	static int64_t GetCurMsTime();
+
 	static void SetCurTime(time_t now_time);
 
 	static inline void GetLocalTime(time_t now_time, tm& rtm);

@@ -1,6 +1,7 @@
 #pragma once
 #include <map>
 #include "Logger.h"
+#include "TimeHelper.h"
 using namespace std;
 
 template<class T>
@@ -25,6 +26,7 @@ public:
 	WheelList()
 	{
 		head = nullptr;
+		m_count = 0;
 	}
 public:
 	void Push(T* node)
@@ -43,6 +45,7 @@ public:
 			node->next = head;
 			head->prev = node;
 		}
+		++m_count;
 	}
 	T* PopAll()
 	{
@@ -52,6 +55,7 @@ public:
 			head->prev->next = nullptr;
 		}
 		head = nullptr;
+		m_count = 0;
 		return tmpHead;
 	}
 	T* Pop()
@@ -85,6 +89,7 @@ public:
 			}
 		}
 		PopNode(obj);
+
 	}
 	bool HaveNode()
 	{
@@ -97,9 +102,11 @@ private:
 		node->next->prev = node->prev;
 		node->next = nullptr;
 		node->prev = nullptr;
+		--m_count;
 	}
 public:
 	T* head;
+	int32_t m_count;
 };
 
 //4 * 256； 可容纳uint32_t长度的时间戳
@@ -315,3 +322,155 @@ private:
 	std::unordered_map<int32_t, T*> m_node_map;
 };
 
+
+template<class T>
+class NewTimerWheel
+{
+private:
+	static constexpr int32_t m_wheel_per_cnt = 60 * 1000;
+	static constexpr int32_t m_precision = 1;
+
+public:
+	NewTimerWheel()
+	{
+		m_cur_index = 0;
+		memset(m_wheel, 0, sizeof(m_wheel));
+		m_node_map.clear();
+	}
+	~NewTimerWheel()
+	{
+		memset(m_wheel, 0, sizeof(m_wheel));
+		m_node_map.clear();
+	}
+	void Init(int64_t init_time)
+	{
+		m_cur_index = 0;
+		m_init_time = m_cur_time = init_time;
+	}
+
+	void Push(T* obj)
+	{
+		WheelList<T>* pWheel = FindWheel(obj->time_stamp);
+		pWheel->Push(obj);
+
+		m_node_map[obj->id] = obj;
+	}
+
+	T* PopAll(int64_t time)
+	{
+		if (time < m_cur_time)
+		{
+			return nullptr;
+		}
+		T* head = nullptr, * tmpHead = nullptr, * tail = nullptr;
+		WheelList<T>* pTmpWheel;
+		head = m_wheel_before.PopAll();
+		if (head)
+		{
+			tail = head->prev;
+			tail->next = nullptr;
+		}
+		while (m_cur_time <= time)
+		{
+			pTmpWheel = FindWheel(m_cur_time);
+			if (pTmpWheel->HaveNode())
+			{
+				tmpHead = pTmpWheel->PopAll();
+				if (!head)
+				{
+					head = tmpHead;
+				}
+				if (tail)
+				{
+					tail->next = tmpHead;
+				}
+				tail = tmpHead->prev;
+				tail->next = nullptr;
+			}
+
+			Tick();
+		}
+		tmpHead = head;
+		while (tmpHead)
+		{
+			m_node_map.erase(tmpHead->id);
+			tmpHead = tmpHead->next;
+		}
+		return head;
+	}
+
+	T* PopAndErase(int32_t id)
+	{
+		if (m_node_map.find(id) == m_node_map.end())
+		{
+			return nullptr;
+		}
+		T* tmpNode = m_node_map[id];
+		((WheelList<T>*)tmpNode->wheel)->Erase(tmpNode);
+		m_node_map.erase(id);
+		return tmpNode;
+	}
+
+	std::unordered_map<int32_t, T*>& GetAllNode()
+	{
+		return m_node_map;
+	}
+
+protected:
+	WheelList<T>* FindWheel(int64_t time)
+	{
+		if (time < m_cur_time)
+		{
+			return &m_wheel_before;
+		}
+		else
+		{
+			int32_t index = GetIndex(time);
+			return &m_wheel[index];
+		}
+	}
+
+	void Tick()
+	{
+		++m_cur_index;
+		++m_cur_time;
+		if (m_cur_index >= m_wheel_per_cnt)
+		{
+			m_cur_index = 0;
+		}
+	}
+
+	int32_t GetIndex(int64_t time)
+	{
+		int64_t time_interval = time - m_cur_time;
+		int64_t cur_time_index = m_cur_index;
+		int64_t cur_time = TimeHelper::GetCurMsTime();
+		if (time >= cur_time)
+		{
+			time_interval = time - cur_time;
+			cur_time_index = cur_time - m_init_time;
+			cur_time_index %= m_wheel_per_cnt;
+		}
+
+		int64_t index = cur_time_index + time_interval;
+		if (index >= m_wheel_per_cnt)
+		{
+			index = m_wheel_per_cnt - cur_time_index - 1;
+		}
+		if (index < 0 || index >= m_wheel_per_cnt)
+		{
+			LOG_ERROR("get index err; index [{}]", index);
+			index = cur_time_index;
+		}
+		return (int32_t)index;
+	}
+
+private:
+	WheelList<T> m_wheel_before;
+	WheelList<T> m_wheel[m_wheel_per_cnt];
+	int32_t m_cur_index;
+	int64_t m_cur_time;
+	int64_t m_init_time;
+
+	std::unordered_map<int32_t, T*> m_node_map;
+};

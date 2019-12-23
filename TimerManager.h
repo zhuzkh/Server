@@ -83,6 +83,7 @@ public:
 		int32_t timer_id = ++m_max_id;
 		node->Init(owner_id, timer_id, time, eTimerType::Normal);
 		m_time_wheel.Push(node);
+		m_timer_map[owner_id].insert(timer_id);
 		return timer_id;
 	}
 // 	int32_t RegisterTimer(int64_t owner_id, time_t time, std::function<void()> func)

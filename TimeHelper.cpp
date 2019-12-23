@@ -8,6 +8,11 @@ time_t TimeHelper::GetCurTime()
 	//return m_cur_time;
 }
 
+int64_t TimeHelper::GetCurMsTime()
+{
+	return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+}
+
 void TimeHelper::SetCurTime(time_t now_time)
 {
 	m_cur_time = now_time;
