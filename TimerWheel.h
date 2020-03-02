@@ -131,7 +131,7 @@ public:
 	}
 	void Init(time_t v)
 	{
-		m_cur_tick = v;
+		m_cur_tick = v - 1;
 		for(int32_t i = WHEEL_INDEX; i >= 0; --i)
 		{
 			m_wheel_cnt[i] = WHEEL_TIMEVALUE(v, i);
@@ -180,9 +180,9 @@ public:
 			tail = head->prev;
 			tail->next = nullptr;
 		}
-		while(m_cur_tick <= time)
+		while(m_cur_tick < time)
 		{
-			pTmpWheel = FindWheel(m_cur_tick);
+			pTmpWheel = FindWheel(m_cur_tick + 1);
 			if(pTmpWheel->HaveNode())
 			{
 				tmpHead = pTmpWheel->PopAll();
