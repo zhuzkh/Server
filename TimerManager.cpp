@@ -21,7 +21,6 @@ void TimerManager::Release()
 			UnRegisterTimer(it->first);
 		}
 	}
-	m_timer_map.clear();
 }
 
 void TimerManager::recycle(TimerNode* node)
@@ -38,39 +37,40 @@ void TimerManager::UnRegisterTimer(int32_t timer_id)
 	recycle(node);
 }
 
-void TimerManager::UnRegisterTimerBatch(int64_t owner_id)
-{
-	if (m_timer_map.find(owner_id) == m_timer_map.end())
-	{
-		return;
-	}
-	for (auto& data : m_timer_map[owner_id])
-	{
-		UnRegisterTimer(data);
-	}
-	m_timer_map[owner_id].clear();
-}
-
-void TimerManager::Tick(time_t now)
+void TimerManager::Tick(time_t now_time)
 {
 	TimerNode* TmpNode = nullptr;
-	TimerNode* node = m_time_wheel.PopAll(now);
+	TimerNode* node = m_time_wheel.PopAll(now_time);
 	while (node)
 	{
-		node->CallBack();
+		bool b_cycle = node->CallBack();
 		TmpNode = node->next;
 		switch (node->type)
 		{
-		case eTimerType::DayCircle:
-			node->time_stamp += TimeHelper::ONE_DAY_SECOND;
-			m_time_wheel.Push(node);
-			break;
-		case eTimerType::WeekCircle:
-			node->time_stamp += TimeHelper::ONE_WEEK_SECOND;
-			m_time_wheel.Push(node);
-			break;
 		case eTimerType::Normal:
 			recycle(node);
+			break;
+		case eTimerType::Cycle:
+			if (b_cycle)
+			{
+				node->cycle_count--;
+				if (node->cycle_count == 0)
+				{
+					recycle(node);
+					break;
+				}
+				node->time_stamp += node->interval_time;
+				if (node->end_time_stamp != 0 && node->time_stamp > node->end_time_stamp)
+				{
+					recycle(node);
+					break;
+				}
+				m_time_wheel.Push(node);
+			}
+			else
+			{
+				recycle(node);
+			}
 			break;
 		default:
 			break;

@@ -33,7 +33,6 @@ int main(int argc, char* argv[])
 {
 	SystemConfig::GetInstance().Initlize(system_config_path);
 	Logger::GetInstance().Initlize("logger", SystemConfig::GetInstance().GetConf().logger.path);
- 	
 	io_context service;
  	NetProxy* net_proxy = new NetProxy(service);
  	net_proxy->Initlize();
@@ -42,7 +41,7 @@ int main(int argc, char* argv[])
   	std::thread network_thread([&net_proxy]() {net_proxy->Run(); });
   	game_logic->Run();
  	//service.run();
- 	
+
  	Release();	
  	delete net_proxy;
 	delete game_logic;

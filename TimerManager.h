@@ -5,16 +5,12 @@
 #include <set>
 #include <unordered_map>
 
-namespace eTimerType
+enum class eTimerType
 {
-	enum e
-	{
-		Unknow = 0,
-		Normal,		//指定时间
-		DayCircle,	//每一天
-		WeekCircle,	//每一周
-	};
-}
+	Unknow = 0,
+	Normal,		//指定时间
+	Cycle,		//一定时间间隔循环
+};
 
 //时间节点
 class TimerNode : public ListNode<TimerNode>
@@ -24,40 +20,46 @@ public:
 	{
 		Clear();
 	}
-	void Init(int64_t owner_id, int32_t id, time_t time, eTimerType::e type)
+	void Init(int32_t id, time_t time, eTimerType type, uint32_t interval_time, time_t end_time, uint32_t cycle_count)
 	{
-		this->owner_id = owner_id;
 		this->id = id;
 		this->time_stamp = time;
 		this->type = type;
+		this->cycle_count = cycle_count;
+		this->end_time_stamp = end_time;
+		this->interval_time = interval_time;
 	}
 	void Clear()
 	{
 		id = 0;
 		time_stamp = 0;
+		cycle_count = 0;
+		end_time_stamp = 0;
+		interval_time = 0;
 		type = eTimerType::Unknow;
-		owner_id = 0;
 	}
-	virtual void CallBack() = 0;
+	virtual bool CallBack() = 0;
 	virtual void Recycle() = 0;
-	int64_t owner_id;
 	int32_t id;
+	uint32_t cycle_count;
+	uint32_t interval_time;
 	time_t time_stamp;
-	eTimerType::e type;
+	time_t end_time_stamp;
+	eTimerType type;
 };
 
 class TimerNodeImpl : public TimerNode
 {
 public:
-	void CallBack()
+	bool CallBack()
 	{
-		func();
+		return func();
 	}
 	void Recycle()
 	{
 		RECYCLE_MEMORY_PTR(TimerNodeImpl, this);
 	}
-	std::function<void()> func;
+	std::function<bool()> func;
 };
 
 
@@ -72,7 +74,7 @@ private:
 	friend Singleton<TimerManager>;
 public:
 	template <typename T>
-	int32_t RegisterTimer(int64_t owner_id, time_t time, T func)
+	int32_t RegisterTimer(time_t time, T func)
 	{
 		TimerNodeImpl* node = GET_MEMORY_PTR(TimerNodeImpl);
 		if (!node)
@@ -81,40 +83,39 @@ public:
 		}
 		node->func = [=] {func(); };
 		int32_t timer_id = ++m_max_id;
-		node->Init(owner_id, timer_id, time, eTimerType::Normal);
+		node->Init(timer_id, time, eTimerType::Normal, 0, 0);
 		m_time_wheel.Push(node);
-		m_timer_map[owner_id].insert(timer_id);
 		return timer_id;
 	}
-// 	int32_t RegisterTimer(int64_t owner_id, time_t time, std::function<void()> func)
-// 	{
-// 		TimerNodeImpl* node = GET_MEMORY_PTR(TimerNodeImpl);
-// 		if (!node)
-// 		{
-// 			return 0;
-// 		}
-//  		node->func = func;
-// 		int32_t timer_id = ++m_max_id;
-// 		node->init(owner_id, timer_id, time, eTimerType::Normal);
-// 		m_time_wheel.Push(node);
-// 		return timer_id;
-// 	}
+
+	template <typename T>
+	int32_t RegisterCycleTimer(time_t time, uint32_t interval_time, T func, time_t end_time = 0, uint32_t count = 0xffffffff)
+	{
+		TimerNodeImpl* node = GET_MEMORY_PTR(TimerNodeImpl);
+		if (!node)
+		{
+			return 0;
+		}
+		node->func = [=] {func(); };
+		int32_t timer_id = ++m_max_id;
+		node->Init(timer_id, time, eTimerType::Cycle, interval_time, end_time, count);
+		m_time_wheel.Push(node);
+		return timer_id;
+	}
 
 	//删除计时器
-	void UnRegisterTimerBatch(int64_t owner_id);
 	void UnRegisterTimer(int32_t timer_id);
 	void Release();
 
 	//tick
-	void Tick(time_t now = 0);
+	void Tick(time_t now_time);
 private:
 	void recycle(TimerNode* node);
 
 private:
 	TimerWheel<TimerNode> m_time_wheel;
-	std::unordered_map<int64_t, std::set<int32_t>> m_timer_map;
 	int32_t m_max_id;
 };
 
 //根据时间戳定时，只调用一次
-#define REGISTER_NORMAL_TIMER(time, func) TimerManager::GetInstance().RegisterTimer(0, time, func)
+#define REGISTER_NORMAL_TIMER(time, func) TimerManager::GetInstance().RegisterTimer(time, func)

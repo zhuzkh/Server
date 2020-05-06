@@ -18,7 +18,7 @@ public:
 
 	static void SetCurTime(time_t now_time);
 
-	static inline void GetLocalTime(time_t now_time, tm& rtm);
+	static inline struct tm GetLocalTime(time_t now_time);
 
 	static time_t GetZeroClockTime(time_t now_time);
 
@@ -26,6 +26,9 @@ public:
 
 	static time_t MakeTime(int y, int mn, int d, int h, int m, int s);
 
+	static bool IsCurDay(time_t time);
+
+	static bool IsTheSameDay(time_t time_1, time_t time_2);
 private:
 	static time_t m_cur_time;
 };
