@@ -13,6 +13,7 @@ class MemoryPoolBase
 public:
 	MemoryPoolBase()
 	{
+		std::lock_guard<std::mutex> lock(m_mutex);
 		MemoryPoolMgr::GetInstance().AddPool(this);
 	}
 	virtual ~MemoryPoolBase()
@@ -20,13 +21,14 @@ public:
 
 	}
 	virtual void Release() = 0;
+	std::mutex m_mutex;
 };
 
 template <typename T>
-class MemoryPool : public Singleton<MemoryPool<T>>, public MemoryPoolBase
+class MemoryPool : public ThreadLocalSingleton<MemoryPool<T>>, public MemoryPoolBase
 {
 private:
-	friend Singleton<MemoryPool>;
+	friend ThreadLocalSingleton<MemoryPool>;
 	MemoryPool() : m_max_size(0), m_header(nullptr), m_tail(nullptr)
 	{
 		for (; m_max_size < DEFAULT_POOL_SIZE; ++m_max_size)
@@ -37,6 +39,7 @@ private:
 
 	~MemoryPool()
 	{
+		Release();
 	}
 public:
 	T* GetObj()
