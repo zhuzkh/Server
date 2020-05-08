@@ -4,28 +4,11 @@
 #include "Logger.h"
 #include "Singleton.h"
 #include <vector>
-#include "MemoryPoolManager.h"
 #include <queue>
 const int32_t DEFAULT_POOL_SIZE = 100;
 
-class MemoryPoolBase
-{
-public:
-	MemoryPoolBase()
-	{
-		std::lock_guard<std::mutex> lock(m_mutex);
-		MemoryPoolMgr::GetInstance().AddPool(this);
-	}
-	virtual ~MemoryPoolBase()
-	{
-
-	}
-	virtual void Release() = 0;
-	std::mutex m_mutex;
-};
-
 template <typename T>
-class MemoryPool : public ThreadLocalSingleton<MemoryPool<T>>, public MemoryPoolBase
+class MemoryPool : public ThreadLocalSingleton<MemoryPool<T>>
 {
 private:
 	friend ThreadLocalSingleton<MemoryPool>;

@@ -11,7 +11,6 @@
 #include "signal.h"
 #include <string>
 #include "TimerManager.h"
-#include "MemoryPoolManager.h"
 #include <memory>
 #include "StringHelper.h"
 #include <map>
@@ -26,7 +25,6 @@ const std::string system_config_path = "../config/config.json";
 void Release()
 {
 	TimerManager::GetInstance().Release();
-	MemoryPoolMgr::GetInstance().Release();
 }
 
 int main(int argc, char* argv[])
