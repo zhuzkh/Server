@@ -1,6 +1,12 @@
 #include "Logger.h"
-#include <direct.h>
-#include <spdlog\sinks\daily_file_sink.h>
+#ifdef WIN32
+	#include <direct.h>
+#else
+	#include <sys/stat.h> ¡¡
+	#include <sys/types.h>
+#endif // Windows
+
+#include <spdlog/sinks/daily_file_sink.h>
 
  Logger::Logger() : m_logger(nullptr)
  {
@@ -63,10 +69,17 @@ bool Logger::makeDir(std::string logger_file_path)
 		}
 		if (!path.empty())
 		{
+#ifdef WIN32 
 			if (_access(path.c_str(), 0) != 0)
 			{
 				if (_mkdir(path.c_str()) != 0)
 				{
+#else
+			if (access(path.c_str(), 0) != 0)
+			{
+				if (mkdir(path.c_str(), S_IRWXO) != 0)
+				{
+#endif
 					printf("make logger dir error! path : %s", logger_file_path.c_str());
 					return false;
 				}

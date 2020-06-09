@@ -17,6 +17,8 @@ public:
 		prev = next = nullptr;
 		wheel = nullptr;
 	}
+
+	virtual ~ListNode(){}
 };
 
 template<class T>
@@ -173,7 +175,7 @@ public:
 			SetTick(time);
 		}
 		T *head = nullptr, *tmpHead = nullptr, *tail = nullptr;
-		WheelList<T>* pTmpWheel;
+		WheelList<T>* pTmpWheel = nullptr;
 		head = m_wheel_before.PopAll();
 		if(head)
 		{

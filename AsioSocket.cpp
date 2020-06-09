@@ -17,6 +17,8 @@ std::vector<eMSG_BUFFER_LENGTH::e> MSG_LENGTH_VEC = {
 AsioSocket::AsioSocket(int id, ip::tcp::socket socket) : m_socket(std::move(socket)), m_id(id)
 {
 	Clear();
+	m_socket.set_option(ip::tcp::no_delay(true));
+	m_socket.set_option(socket_base::reuse_address(true));
 }
 
 AsioSocket::AsioSocket(io_context& service) : m_socket(service), m_id(0)

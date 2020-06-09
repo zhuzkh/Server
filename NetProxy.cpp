@@ -17,7 +17,7 @@ bool NetProxy::Initlize()
 	int32_t port = SystemConfig::GetInstance().GetConf().network.listen_port;
 	if (!m_acceptor.Initilize("127.0.0.1", port))
 	{
-		LOG_INFO("acceptor initilize err {}", "lalala");
+		LOG_INFO("acceptor initilize err");
 		return false;
 	}
 	m_acceptor.RegisterAcceptFunc(std::bind(&NetProxy::OnAccept, this, std::placeholders::_1, std::placeholders::_2));
@@ -28,7 +28,7 @@ bool NetProxy::Initlize()
 	{
 		return false;
 	}
-	if (m_send_queue.Init(MESSAGE_CIRULAR_QUEUE_LENGTH))
+	if (!m_send_queue.Init(MESSAGE_CIRULAR_QUEUE_LENGTH))
 	{
 		return false;
 	}
@@ -114,6 +114,7 @@ void NetProxy::OnAccept(system::error_code err, ip::tcp::socket& socket)
 	{
 		return;
 	}
+	
 	asioSocket->REGISTER_READ_FUNC(&NetProxy::OnReceive, this);
 	//asioSocket->RegisterReadFunc(std::bind(&NetProxy::OnReceive, &NetProxy::GetInstance(), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
 //   	asioSocket->RegisterWriteFunc(std::bind(&NetProxy::OnSend, &NetProxy::GetInstance(), std::placeholders::_1, std::placeholders::_2));

@@ -1,0 +1,27 @@
+PROJECT(GAMESERVER)
+
+#add_definitions(-DHAVE_CONFIG_H)
+AUX_SOURCE_DIRECTORY(./ SRC_LIST)
+
+SET(EXECUTABLE_OUTPUT_PATH ../../Debug/)
+
+ADD_DEFINITIONS(
+ -std=c++11
+ -g
+ -w
+ -D_REENTRANT
+ -D_FILE_OFFSET_BITS=64
+ -DTIXML_USE_STL
+ -DLINUX_DAEMON
+ -DJSON_HAS_INT64
+ -DGT_HAS_DEBUG
+ -DGT_HAS_INFO
+ -DGT_HAS_WARNING
+ -DGT_HAS_ERROR
+# -DGT_HAS_CRITICAL
+)
+INCLUDE_DIRECTORIES(../ThirdParty)
+LINK_DIRECTORIES(/lib64)
+ADD_EXECUTABLE(gameserver ${SRC_LIST})
+
+TARGET_LINK_LIBRARIES(gameserver boost_system boost_thread protobuf-lite protobuf protoc ssl crypto dl pthread)

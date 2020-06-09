@@ -104,7 +104,7 @@ private:
 		ListNode* obj = new ListNode();
 		if (!obj)
 		{
-			LOG_ERROR("create memory obj failed! {}");
+			LOG_ERROR("create memory obj failed!");
 			return;
 		}
 		PushBack(obj);

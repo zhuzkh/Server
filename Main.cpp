@@ -32,17 +32,20 @@ int main(int argc, char* argv[])
 	SystemConfig::GetInstance().Initlize(system_config_path);
 	Logger::GetInstance().Initlize("logger", SystemConfig::GetInstance().GetConf().logger.path);
 	io_context service;
- 	NetProxy* net_proxy = new NetProxy(service);
- 	net_proxy->Initlize();
- 	LogicSystem* game_logic = new LogicSystem(net_proxy->GetSendQueue(), net_proxy->GetReceiveQueue());
+	NetProxy* net_proxy = new NetProxy(service);
+	bool b_init = net_proxy->Initlize();
+	if (b_init)
+	{
+		LogicSystem* game_logic = new LogicSystem(net_proxy->GetSendQueue(), net_proxy->GetReceiveQueue());
+		std::thread network_thread([&net_proxy]() {net_proxy->Run(); });
+		game_logic->Run();
+		//service.run();
 
-  	std::thread network_thread([&net_proxy]() {net_proxy->Run(); });
-  	game_logic->Run();
- 	//service.run();
+		Release();
+		delete net_proxy;
+		delete game_logic;
+	}
 
- 	Release();	
- 	delete net_proxy;
-	delete game_logic;
- 	::system("pause");
+	::system("pause");
 	return 1;
 }
