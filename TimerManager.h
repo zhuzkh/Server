@@ -81,7 +81,7 @@ public:
 		{
 			return 0;
 		}
-		node->func = [=] {func(); };
+		node->func = [=] { return func(); };
 		int32_t timer_id = ++m_max_id;
 		node->Init(timer_id, time, eTimerType::Normal, 0, 0, 0);
 		m_time_wheel.Push(node);
